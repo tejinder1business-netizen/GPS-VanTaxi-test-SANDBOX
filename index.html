@@ -93,9 +93,6 @@
         .fullscreen-lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 3000; justify-content: center; align-items: center; }
         .fullscreen-lightbox img { width: 100%; height: 100%; object-fit: contain; }
         .btn-close-lightbox { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.25); color: white; border: 2px solid white; border-radius: 50%; width: 50px; height: 50px; font-size: 1.5rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        
-        /* Styling rule handling your custom bright yellow plain English highlights layout */
-        mark { background-color: #ffeb3b; font-weight: bold; padding: 2px 6px; border-radius: 3px; color: #000000; }
     </style>
 </head>
 <body> 
@@ -208,10 +205,10 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // ==========================================
-        // LANDMARK DESCRIPTION ADDITION: MAP CORE INITIALIZER
-        // <mark><strong>[PLAIN ENGLISH: This area loads the open-source map engine framework on your phone screen, locks the viewpoint layout looking strictly North-Up, and configures how far you can pinch-to-zoom on shifts.]</strong></mark>
-        // ==========================================
+        // =========================================================================================
+        // LANDMARK: MAP CORE INITIALIZER
+        // [PLAIN ENGLISH: LOADS THE MAP ENGINE, LOCKS VIEW NORTH-UP, SETS PHONE ZOOM LIMITS]
+        // =========================================================================================
         const map = L.map('map', { 
             zoomControl: false, 
             maxZoom: 18,
@@ -268,12 +265,10 @@
         }, { passive: true });
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: CAMERA SWIPE INTERACTIVE MANAGER
-        // <mark><strong>[PLAIN ENGLISH: This feature tracks finger movements across your live feed preview window. Swiping right or left shifts instantly to the next city camera in the stack.]</strong></mark>
-        // What it does: Analyzes horizontal finger swipes across the live feed image to switch cams.
-        // Where it's used: Triggered automatically by touch event handlers on the camera stream view box.
-        // ==========================================
+        // [PLAIN ENGLISH: TRACKS FINGER SWIPES ON THE CAMERA PREVIEW TO SWITCH STREET CAMS QUICKLY]
+        // =========================================================================================
         function evaluateSwipeDirection() {
             const cameraButtons = Array.from(document.querySelectorAll('#camera-list-options button'));
             if (cameraButtons.length === 0) return;
@@ -296,12 +291,10 @@
         }
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: OPEN CAMERA SELECTION WINDOW
-        // <mark><strong>[PLAIN ENGLISH: This clears out any previously watched intersections, stops background background refresh timers, and throws open the primary city camera shortcut grid menu.]</strong></mark>
-        // What it does: Resets active stream cache, cleans style highlight classes, and opens camera modal box.
-        // Where it's used: Called immediately when the primary top-HUD "CAMERAS" action button is pressed.
-        // ==========================================
+        // [PLAIN ENGLISH: RESETS PREVIOUS CAMERA TIMERS AND OPENS THE TRAFFIC CAMERA POPUP MENU]
+        // =========================================================================================
         function openCameraListMenu() {
             document.getElementById('live-cam-display-box').style.display = 'none';
             activeCamUrl = "";
@@ -312,12 +305,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: DYNAMIC LIVE CAMERA STREAM PARSER
-        // <mark><strong>[PLAIN ENGLISH: This automatically links text rows to actual online traffic feeds. It converts the webpage address into a live image URL and instantly scales it to a clean smartphone layout.]</strong></mark>
-        // What it does: Maps static web endpoints to active live image links and instantly projects them full-screen.
-        // Where it's used: Activated whenever an individual camera location row item is selected inside the modal list.
-        // ==========================================
+        // [PLAIN ENGLISH: CONVERTS CITY WEB ADDRESSES INTO REAL-TIME IMAGE LINKS FOR YOUR SCREEN]
+        // =========================================================================================
         function toggleLiveCameraFeed(targetUrl) {
             activeRawTargetUrl = targetUrl;
 
@@ -352,12 +343,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: FULL SCREEN LIGHTBOX PROJECTOR
-        // <mark><strong>[PLAIN ENGLISH: This launches a dedicated black overlay layer that expands the live traffic feed image to fit your full display screen instantly.]</strong></mark>
-        // What it does: Launches the custom black canvas overlay to show the current camera stream in full viewport size.
-        // Where it's used: Executed automatically by the image parser, or when manually tapping a preview panel.
-        // ==========================================
+        // [PLAIN ENGLISH: POPS OPEN A BIG FULL-SCREEN BLACK LAYER TO SHOW THE LIVE TRAFFIC FEED IMAGE]
+        // =========================================================================================
         function launchFullscreenViewer() {
             if (!activeCamUrl) return;
             const lightbox = document.getElementById('lightbox-viewer');
@@ -372,12 +361,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: DISMISS FULL SCREEN LIGHTBOX
-        // <mark><strong>[PLAIN ENGLISH: This instantly shuts down the full-screen dark window overlay and drops you right back to your regular taxi dashboard map workspace.]</strong></mark>
-        // What it does: Shuts down the black full-screen image display canvas to restore background workspace view.
-        // Where it's used: Activated by clicking the "✕" close layout circle button or tapping straight onto the image.
-        // ==========================================
+        // [PLAIN ENGLISH: CLOSES THE FULL SCREEN IMAGE OVERLAY TO GO STRAIGHT BACK TO YOUR ACTIVE MAP]
+        // =========================================================================================
         function exitFullscreenViewer() {
             document.getElementById('lightbox-viewer').style.display = 'none';
         } 
@@ -417,13 +404,10 @@
         }); 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: REVERSE GEOLOCATION ENGINE
-        // <mark><strong>[PLAIN ENGLISH: This converts raw numeric GPS coordinates from your mobile phone antenna into real street names and house numbers by asking the open-source address registry server in real-time.]</strong></mark>
-        // What it does: Converts latitude/longitude GPS numbers into real street names and house numbers via Nominatim OpenStreetMap.
-        // Where it's used: Fired continuously by the movement tracker script whenever the driver shifts location.
-        // FIXED: Removed the unsupported custom 'timeout' option configuration property that breaks standard fetch behaviors.
-        // ==========================================
+        // [PLAIN ENGLISH: CONVERTS GPS NUMBERS INTO REAL STREET NAMES AND HOUSE NUMBERS AUTOMATICALLY]
+        // =========================================================================================
         function fetchAddressFromCoordinates(latlng, forcedCallback = null) {
             let distanceMoved = 0;
             if (lastGeocodedPos) {
@@ -459,24 +443,20 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: MODAL DISPLAY TRIGGER
-        // <mark><strong>[PLAIN ENGLISH: This activates the dark translucent protective background screen and opens whichever popup sub-menu window you selected right on top of it.]</strong></mark>
-        // What it does: Activates the main dim dark background blocker layer and renders the targeted menu container window visible.
-        // Where it's used: Attached directly to the main layout control panel icons across the layout header.
-        // ==========================================
+        // [PLAIN ENGLISH: DIMS THE MAP BACKGROUND AND SLIDES OPEN WHICHEVER MENU BOX YOU PRESSED]
+        // =========================================================================================
         function showModal(id) {
             document.getElementById('screen-overlay').style.display = 'block';
             document.getElementById(id).style.display = 'block';
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: GLOBAL MODAL CLOSURE SUBROUTINE
-        // <mark><strong>[PLAIN ENGLISH: This closes all active dialogue popup windows and clears the dim background mask away to instantly return to your clean navigation map view.]</strong></mark>
-        // What it does: Sweeps the workspace screen clean by turning off every active driver menu modal and background mask layer.
-        // Where it's used: Triggered when tapping outside an action box or clicking explicit close cancel interface buttons.
-        // ==========================================
+        // [PLAIN ENGLISH: CLOSES OUT ALL OPEN MENUS INSTANTLY TO LEAVE YOUR DRIVING WORKSPACE CLEAN]
+        // =========================================================================================
         function hideModals() {
             document.getElementById('screen-overlay').style.display = 'none';
             document.querySelectorAll('.driver-modal').forEach(m => m.style.display = 'none');
@@ -486,12 +466,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: VEHICLE VIEW RE-CENTER TRACKER
-        // <mark><strong>[PLAIN ENGLISH: This re-engages the map tracking lock system. It automatically snaps the map view right back onto your car icon and keeps it pinned dead-center as you drive down the road.]</strong></mark>
-        // What it does: Re-invests the automated camera locking frame to keep the yellow taxi indicator pinned dead-center on screen.
-        // Where it's used: Triggered when pressing the right-side middle "MAP FREE" utility circular navigation option.
-        // ==========================================
+        // [PLAIN ENGLISH: SNAPS MAP AUTOMATICALLY BACK ONTO TAXI CAR ICON AND KEEPS IT PINNED IN THE CENTER]
+        // =========================================================================================
         function handleRecenter() {
             trackVehicleView = true;
             const btn = document.getElementById('lock-center-btn');
@@ -503,12 +481,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: AUDIO MUTE MANAGEMENT INTERFACE
-        // <mark><strong>[PLAIN ENGLISH: This shifts the voice announcer engine state. It alternates the button color between neutral white and alert red, letting you mute or unmute the automated shift notifications.]</strong></mark>
-        // What it does: Toggles the audio engine state variable and transforms button skin between grey and bright alarm red.
-        // Where it's used: Activated by pressing the top-left corner side circular control button element.
-        // ==========================================
+        // [PLAIN ENGLISH: SWITCHES THE VOICE ALERTS ENGINE ON OR OFF AND TURNS THE BUTTON ALARM RED]
+        // =========================================================================================
         function handleMuteToggle() {
             audioMuted = !audioMuted;
             const btn = document.getElementById('mute-toggle-btn');
@@ -522,13 +498,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: DISPATCH PASSENGER FLAG MARKER
-        // <mark><strong>[PLAIN ENGLISH: This drops a passenger stick-figure icon right where your cab is located. It reads your street address, sets up a Google Maps navigation deep-link popup, and triggers an automated speech broadcast.]</strong></mark>
-        // What it does: Places a passenger icon at current location coordinates with an interactive cross-platform map routing hyperlink.
-        // Where it's used: Called when choosing an orientation or hotel option within the primary flag popup terminal list.
-        // SECURITY PATCH: Replaced blocked 'googleusercontent' mirror link framework with safe native web coordinate parameters.
-        // ==========================================
+        // [PLAIN ENGLISH: DROPS A PASSENGER OR HOTEL PIN AT CURRENT COORDINATES AND TRIGGERS VOICE DISPATCH]
+        // =========================================================================================
         function dropFlagDirect(selectionValue) {
             hideModals(); 
             if (!vehiclePos) return; 
@@ -546,7 +519,6 @@
                 const flagMarker = L.marker(targetPos, { icon: redManIcon }).addTo(map);
                 const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName;
                 
-                // FIXED: Repaired broken template literal syntax block and secured deep link structure
                 const navigationUrl = `https://www.google.com/maps/search/?api=1&query=${targetPos.lat},${targetPos.lng}`;
 
                 let headerLabel = `<strong style="color:#ff3b30;">FLAG WAITING</strong>`;
@@ -563,7 +535,6 @@
 
                 dispatchAudioNarration('Flag', selectionValue); 
 
-                // Automatic cleanup policy: drops tracking instance from canvas layers after exactly 5 minutes
                 setTimeout(() => {
                     map.removeLayer(flagMarker);
                 }, 300000); 
@@ -571,12 +542,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: CAUTION STAGE 1 ROUTER
-        // <mark><strong>[PLAIN ENGLISH: This logs the type of delay you selected (like heavy traffic or an accident) and instantly switches you to the direction selection menu.]</strong></mark>
-        // What it does: Registers the specific category of obstruction picked and advances display interface straight onto step 2 panel.
-        // Where it's used: Attached directly to individual items inside the yellow "CAUTION" warning window panel list.
-        // ==========================================
+        // [PLAIN ENGLISH: RECORDS DELAY CATEGORY CHOSEN AND SWAPS DIRECTLY TO DIRECTION SELECTION BOX]
+        // =========================================================================================
         function selectCautionType(type) {
             chosenCautionType = type;
             hideModals();
@@ -584,12 +553,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: PROJECT CAUTION ANCHOR ON MAP
-        // <mark><strong>[PLAIN ENGLISH: This draws a solid yellow circular warning marker onto your map layout at your current location and loads it with geocoded local street names.]</strong></mark>
-        // What it does: Draws a solid yellow circle marker alert onto current map view zone loaded with reverse address data blocks.
-        // Where it's used: Fired immediately when selecting a target driving vector option from the Caution direction matrix panel.
-        // ==========================================
+        // [PLAIN ENGLISH: DRAWS A SOLID YELLOW CIRCULAR DELAY ALERT POINT EXACTLY WHERE CAB IS LOCATED]
+        // =========================================================================================
         function dropCautionMarker(directionValue) {
             hideModals(); 
             if (!vehiclePos) return; 
@@ -620,12 +587,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: POLICE STAGE 1 ROUTER
-        // <mark><strong>[PLAIN ENGLISH: This records whether the enforcement threat is Radar, an Emergency, or a Hidden setup, then moves you forward to select the driving direction.]</strong></mark>
-        // What it does: Logs whether enforcement threat tracking profile matches Radar, Emergency or Hidden setups and shuffles view into step 2.
-        // Where it's used: Linked directly to clicking elements inside the primary "POLICE" enforcement intercept menu panel.
-        // ==========================================
+        // [PLAIN ENGLISH: SAVES ENFORCEMENT THREAT TYPE AND SLIDES WINDOW TO COMPASS ORIENTATION CHOICES]
+        // =========================================================================================
         function selectPoliceType(type) {
             chosenPoliceType = type;
             hideModals();
@@ -633,12 +598,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: PROJECT POLICE ENFORCEMENT ZONE
-        // <mark><strong>[PLAIN ENGLISH: This places a solid blue police radar circle pin onto the map layout grid and automatically builds your background voice warning message string.]</strong></mark>
-        // What it does: Pins a solid blue warning indicator point marker block onto map layout containing current geocoded data matrices.
-        // Where it's used: Triggered immediately when selecting a structural direction option inside the final police setup view window.
-        // ==========================================
+        // [PLAIN ENGLISH: DROPS A SOLID BLUE RADAR PIN POINT AND SENDS TEXT STRINGS TO BLUETOOTH ENGINES]
+        // =========================================================================================
         function dropPoliceMarker(directionValue) {
             hideModals(); 
             if (!vehiclePos) return; 
@@ -669,12 +632,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: AUDIO ADDRESS COUPLES STRING CONVERTER
-        // <mark><strong>[PLAIN ENGLISH: This breaks down 3 or 4-digit street number blocks into easily spoken pairs. For example, it converts the house number "1441" into "14 41" so the voice engine pronounces it naturally over your cab's audio system.]</strong></mark>
-        // What it does: Breaks standard 3 and 4-digit street block integers down into vocal pair groupings (e.g. 1441 to "14 41").
-        // Where it's used: Internal optimization subroutine run continuously right before triggering native TTS output arrays.
-        // ==========================================
+        // [PLAIN ENGLISH: SPLITS 3 OR 4-DIGIT HOUSE CODES INTO NUMBER PAIRS SO BLUETOOTH READS IT PROPERLY]
+        // =========================================================================================
         function breakHouseNumbersIntoCouples(numberStr) {
             if (!numberStr || isNaN(numberStr)) return numberStr;
             
@@ -698,12 +659,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: CENTRAL TEXT-TO-SPEECH BROADCAST MACHINE
-        // <mark><strong>[PLAIN ENGLISH: This assembles your plain English verbal notification text, cleans out the smartphone's speaker buffers, and sends the audio warning through your Bluetooth connection with a clear 1.5-second buffer delay to prevent truncation.]</strong></mark>
-        // What it does: Assembles plain English alert strings and flushes audio buffers with an isolated delay to prevent clipping over Bluetooth.
-        // Where it's used: Automatically invoked whenever a flag, caution obstacle, or police vehicle trap is successfully saved onto the map field.
-        // ==========================================
+        // [PLAIN ENGLISH: FLUSHES INTERCOM BUFFER AND SENDS THE NARRATION ALERT VIA 1.5s BLUETOOTH DELAY]
+        // =========================================================================================
         function dispatchAudioNarration(category, payload) {
             const spokenHouseNumber = breakHouseNumbersIntoCouples(currentAddressData.houseNumber);
             const addressAudioString = spokenHouseNumber ? `${spokenHouseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName;
@@ -739,12 +698,10 @@
         } 
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: INSTANT AUDIO CACHE REPLAY SUBROUTINE
-        // <mark><strong>[PLAIN ENGLISH: This pulls the very last audio notification text straight out of your phone's memory cache and immediately replays it aloud whenever you click the purple dashboard button.]</strong></mark>
-        // What it does: Reads the active voice broadcast string straight out of memory logs and plays it back with near-zero latency.
-        // Where it's used: Attached directly to the middle left side "REPLAY MSG" purple dashboard icon utility action button component.
-        // ==========================================
+        // [PLAIN ENGLISH: INSTANTLY REPLAYS THE LAST DISPATCHED MESSAGE STORED INSIDE LOG MEMORY CHIPS]
+        // =========================================================================================
         function replayLastAudioNarration() {
             if (!lastSpokenSpeechString) return;
             
@@ -759,12 +716,10 @@
         }
 
 
-        // ==========================================
+        // =========================================================================================
         // LANDMARK: HARDWARE DISPLAY ANTI-BLACKOUT ENGINE
-        // <mark><strong>[PLAIN ENGLISH: This system connects directly to your phone's background system settings to lock the screen backlighting turned "ON" while on shift. This stops your phone display from falling asleep or timing out while you are driving.]</strong></mark>
-        // What it does: Requests a navigator screen lock profile to stop mobile device screen timers from putting displays to sleep while on shift.
-        // Where it's used: Activated instantly during page initialization cycles, and monitors background visibility changes.
-        // ==========================================
+        // [PLAIN ENGLISH: BACK-LINKS TO SMARTPHONE SYSTEM SETTINGS TO PREVENT SCREEN SLEEP MODES ON SHIFT]
+        // =========================================================================================
         async function maintainScreenWakeLock() {
             try {
                 if ('wakeLock' in navigator) {
