@@ -39,6 +39,11 @@
         .red-man-icon { font-size: 34px; text-align: center; line-height: 34px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.6)); }
         .police-officer-icon { font-size: 36px; text-align: center; line-height: 36px; filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.6)); }
         
+        /* DYNAMIC CAUTION MARKER ICONS */
+        .caution-traffic-icon { font-size: 26px; text-align: center; line-height: 26px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.6)); white-space: nowrap; }
+        .caution-accident-icon { font-size: 34px; text-align: center; line-height: 34px; filter: drop-shadow(0px 2px 5px rgba(0,0,0,0.6)); }
+        .caution-closure-icon { font-size: 34px; text-align: center; line-height: 34px; filter: drop-shadow(0px 2px 5px rgba(0,0,0,0.6)); }
+        
         /* Driving Selection Popups - SOLID WHITE BACKGROUND FOUNDATIONS */
         .driver-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 22px; border-radius: 16px; z-index: 2000; box-shadow: 0 14px 40px rgba(0,0,0,0.5); background: #ffffff !important; border: 4px solid #1c1c1e; }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 1999; }
@@ -419,7 +424,7 @@
 
 
         // =========================================================================================
-        // CAUTION LOGIC SUBROUTINES
+        // REBUILT CAUTION LOGIC SUBROUTINES WITH CUSTOM MARKERS
         // =========================================================================================
         function selectCautionType(type) {
             chosenCautionType = type;
@@ -436,14 +441,42 @@
             const directionLabel = directionValue; 
 
             fetchAddressFromCoordinates(targetPos, function() {
-                const dynamicMarker = L.circleMarker(targetPos, {
-                    color: '#b38f00',
-                    fillColor: '#ffcc00',
-                    fillOpacity: 1.0, 
-                    weight: 3,
-                    radius: 14
-                }).addTo(map); 
+                let cautionIconHtml = "";
+                let classLabel = "";
+                let anchorOffsets = [15, 15];
+                let customSize = [30, 30];
 
+                // Determine precise visual layout based on custom alert type rules
+                if (typeLabel === 'Mild traffic') {
+                    cautionIconHtml = "🚘🚘";
+                    classLabel = "caution-traffic-icon";
+                    customSize = [50, 26];
+                    anchorOffsets = [25, 13];
+                } else if (typeLabel === 'Heavy traffic') {
+                    cautionIconHtml = "🚘🚘🚘🚘";
+                    classLabel = "caution-traffic-icon";
+                    customSize = [90, 26];
+                    anchorOffsets = [45, 13];
+                } else if (typeLabel === 'Accident') {
+                    cautionIconHtml = "💥🚗";
+                    classLabel = "caution-accident-icon";
+                    customSize = [44, 34];
+                    anchorOffsets = [22, 17];
+                } else if (typeLabel === 'Road closure') {
+                    cautionIconHtml = "🚧";
+                    classLabel = "caution-closure-icon";
+                    customSize = [34, 34];
+                    anchorOffsets = [17, 17];
+                }
+
+                const cautionDivIcon = L.divIcon({
+                    className: classLabel,
+                    html: cautionIconHtml,
+                    iconSize: customSize,
+                    iconAnchor: anchorOffsets
+                });
+
+                const dynamicMarker = L.marker(targetPos, { icon: cautionDivIcon }).addTo(map); 
                 const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName; 
 
                 dynamicMarker.bindPopup(`
@@ -453,6 +486,11 @@
                 `).openPopup(); 
 
                 dispatchAudioNarration('Caution', { type: typeLabel, direction: directionLabel });
+
+                // Auto-clear caution markers after 20 minutes to keep screen current
+                setTimeout(() => {
+                    map.removeLayer(dynamicMarker);
+                }, 1200000);
             });
         } 
 
