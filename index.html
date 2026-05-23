@@ -120,17 +120,13 @@
     <div id="camera-menu-pop" class="driver-modal cam-list-grid">
         <span class="modal-title">Street View Cameras</span>
         <div class="grid-options" id="camera-list-options">
-            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/BurrardCornwall4.htm')">Burrard and Cornwall</button>
-            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/cambiebridge.htm')">Cambie Bridge</button>
-            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/granvilleHoweOnRamp.htm')">Granville Bridge</button>
-            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/granville70th.htm')">Granville and 70th Avenue</button>
-            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/granvillerobson.htm')">Granville and Robson</button>
-            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/hastings.htm')">Hastings and Boundary Rd.</button>
-            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/transcanada01.htm')">HWY 1 and 1st Ave</button>
-            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/knightMarineBridge.htm')">Knight Street Bridge</button>
-            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/oak4.htm')">Oak and 70th</button>
-            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/cameraimages/BeattyDunsmuirEast.jpg')">Viaduct Westbound</button>
-            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/denman3.htm')">W Georgia and Denman st.</button>
+            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/cameraimages/BurrardCornwallSouth.jpg')">Burrard and Cornwall</button>
+            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/cameraimages/Cambie02EastEast.jpg')">Cambie Bridge</button>
+            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/cameraimages/GranvilleRobsonSouthSouth.jpg')">Granville and Robson</button>
+            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/cameraimages/Hastingseast_boundary.jpg')">Hastings and Boundary Rd</button>
+            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/cameraimages/TransCanada01East.jpg')">HWY 1 and E 1st ave</button>
+            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/cameraimages/KnightBridgeNorth.jpg')">Knight st Bridge</button>
+            <button class="btn-camera-select full-width-btn" onclick="toggleLiveCameraFeed('https://trafficcams.vancouver.ca/cameraimages/Oak70EastEast.jpg')">Oak and 70th</button>
         </div>
         
         <div id="live-cam-display-box" class="cam-display-box">
@@ -233,7 +229,7 @@
 
         // Selection variables
         let chosenCautionType = "";
-        let chosenPoliceType = "radar"; // Defaults safely to radar string 
+        let chosenPoliceType = "radar"; 
 
         // Geocoding caches
         let currentAddressData = { houseNumber: "", streetName: "Unknown Street", isLoaded: false }; 
@@ -296,6 +292,7 @@
             showModal('camera-menu-pop');
         } 
 
+        // DIRECT PARSING: Since you provided direct .jpg paths, we safely load them without string replacements
         function toggleLiveCameraFeed(targetUrl) {
             activeRawTargetUrl = targetUrl;
 
@@ -307,25 +304,7 @@
                 }
             });
 
-            let dynamicImageUrl = targetUrl;
-            if (targetUrl.endsWith('.htm') || targetUrl.endsWith('.html')) {
-                const urlParts = targetUrl.split('/');
-                const filename = urlParts[urlParts.length - 1].replace('.htm', '.jpg').replace('.html', '.jpg');
-                let correctedFilename = filename;
-                if (filename === 'transcanada01.jpg') correctedFilename = 'TransCanada01.jpg';
-                else if (filename === 'hastings.jpg') correctedFilename = 'HastingsBoundaryEast.jpg';
-                else if (filename === 'denman3.jpg') correctedFilename = 'GeorgiaDenmanWest.jpg';
-                else if (filename === 'granvillerobson.jpg') correctedFilename = 'GranvilleRobsonNorth.jpg';
-                else if (filename === 'cambiebridge.jpg') correctedFilename = 'CambieBridgeDeck.jpg';
-                else if (filename === 'oak4.jpg') correctedFilename = 'Oak70thNorth.jpg';
-                else if (filename === 'granvilleHoweOnRamp.jpg') correctedFilename = 'GranvilleHoweOnRamp.jpg';
-                else if (filename === 'knightMarineBridge.jpg') correctedFilename = 'KnightMarineBridgeNorth.jpg';
-                else if (filename === 'granville70th.jpg') correctedFilename = 'Granville70thNorth.jpg';
-                
-                dynamicImageUrl = `https://trafficcams.vancouver.ca/cameraimages/${correctedFilename}`;
-            } 
-
-            activeCamUrl = dynamicImageUrl;
+            activeCamUrl = targetUrl;
             launchFullscreenViewer();
         } 
 
@@ -532,10 +511,10 @@
 
 
         // =========================================================================================
-        // INTEGRATED REBUILT POLICE PIPELINE SNIPPET
+        // POLICE PIPELINE SNIPPET
         // =========================================================================================
         function selectPoliceType(type) {
-            chosenPoliceType = type.toLowerCase().trim(); // Guarantees case-insensitivity match
+            chosenPoliceType = type.toLowerCase().trim();
             hideModals();
             showModal('police-dir-pop');
         } 
@@ -549,7 +528,6 @@
             const directionLabel = directionValue; 
 
             fetchAddressFromCoordinates(targetPos, function() {
-                // Generates custom HTML div layout containing the Policeman vector icon
                 const policeIcon = L.divIcon({
                     className: 'police-officer-icon',
                     html: '👮',
@@ -557,7 +535,6 @@
                     iconAnchor: [18, 18]
                 });
 
-                // Spawns the marker onto the map grid layout
                 const officerMarker = L.marker(targetPos, { icon: policeIcon }).addTo(map);
                 const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName; 
 
@@ -567,10 +544,9 @@
                     <span>Location: ${completeAddress}</span>
                 `).openPopup(); 
 
-                // Dispatch to the speech engine
                 dispatchAudioNarration('Police', { type: typeLabel, direction: directionLabel });
 
-                // AUTOMATIC CLEANUP RUNNER: Destroys marker completely after 30 minutes (1800000 ms)
+                // Retains the officer on screen for exactly 30 minutes
                 setTimeout(() => {
                     map.removeLayer(officerMarker);
                 }, 1800000);
@@ -623,7 +599,6 @@
             else if (category === 'Caution') {
                 finalSpeechString = `One ${payload.type.toLowerCase()} reported ahead ${payload.direction.toLowerCase()} at ${addressAudioString}`;
             } 
-            // FULLY REWRITTEN VOICE ROUTING SCHEDULER
             else if (category === 'Police') {
                 const speechDirection = payload.direction.toLowerCase();
                 
@@ -634,7 +609,6 @@
                     finalSpeechString = `One police reported ahead ${speechDirection} at ${addressAudioString} they are hiding they are hiding`;
                 } 
                 else {
-                    // Safe catch-all fallback for 'radar'
                     finalSpeechString = `One police reported ahead ${speechDirection} at ${addressAudioString} Radar Radar`;
                 }
             } 
