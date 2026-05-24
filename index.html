@@ -3,238 +3,673 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tactical Driver Grid - Sandbox Engine</title>
+    <title>Yellow Cab Companion Pro V9</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #111;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            overflow: hidden;
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; background: #111; }
+        
+        #map { width: 100%; height: 100%; position: absolute; top: 0; bottom: 0; z-index: 1; }
+        
+        /* Top HUD Action Buttons Grid (4 Circular Controls) */
+        .top-actions { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 1000; width: 95%; justify-content: center; }
+        .action-btn { width: 82px; height: 82px; border-radius: 50%; border: 4px solid #fff; color: white; font-weight: bold; font-size: 0.82rem; cursor: pointer; box-shadow: 0 6px 12px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .btn-flag { background: #ff3b30; }
+        .btn-caution { background: #ffcc00; color: #000; border-color: #000; }
+        .btn-police { background: #007aff; }
+        .btn-camera-top { background: #34c759; } 
+        .action-btn span { font-size: 0.62rem; margin-top: 2px; display: block; line-height: 1.1; font-weight: 900; } 
+
+        /* Middle Side Utility Buttons */
+        .side-util { position: absolute; top: 50%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 20px; }
+        .left-side { left: 15px; }
+        .right-side { right: 15px; }
+        .util-circle { width: 70px; height: 70px; border-radius: 50%; background: #ffffff; border: 3px solid #1c1c1e; color: #1c1c1e; font-weight: 900; font-size: 0.85rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; text-align: center; }
+        .util-circle.active-mute { background: #ff453a; color: white; border-color: white; }
+        .util-circle.active-center { background: #34c759; color: white; border-color: white; } 
+        
+        /* Repeat Audio Button Style */
+        .util-circle.active-repeat { background: #5856d6; color: white; border-color: white; }
+
+        /* Custom Pure CSS Taxi Moving Element */
+        .taxi-vector-icon { background: #ffd100; border: 2px solid #000; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.4); text-align: center; font-weight: bold; font-size: 10px; line-height: 24px; color: black; }
+        .taxi-vector-icon::after { content: ''; position: absolute; top: -5px; left: 6px; width: 10px; height: 4px; background: black; border-radius: 1px; } 
+
+        /* Custom Drop Markers - SOLID COLORS */
+        .red-man-icon { font-size: 34px; text-align: center; line-height: 34px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.6)); }
+        .police-officer-icon { font-size: 36px; text-align: center; line-height: 36px; filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.6)); }
+        
+        /* DYNAMIC CAUTION MARKER ICONS */
+        .caution-traffic-icon { font-size: 26px; text-align: center; line-height: 26px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.6)); white-space: nowrap; }
+        .caution-accident-icon { font-size: 34px; text-align: center; line-height: 34px; filter: drop-shadow(0px 2px 5px rgba(0,0,0,0.6)); }
+        .caution-closure-icon { font-size: 34px; text-align: center; line-height: 34px; filter: drop-shadow(0px 2px 5px rgba(0,0,0,0.6)); }
+        
+        /* Driving Selection Popups - SOLID WHITE BACKGROUND FOUNDATIONS */
+        .driver-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 22px; border-radius: 16px; z-index: 2000; box-shadow: 0 14px 40px rgba(0,0,0,0.5); background: #ffffff !important; border: 4px solid #1c1c1e; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 1999; }
+        
+        .modal-title { font-size: 1.15rem; font-weight: 900; margin-bottom: 16px; text-align: center; display: block; border-bottom: 2px solid #e5e5ea; padding-bottom: 8px; color: #1c1c1e; text-transform: uppercase; letter-spacing: 0.5px; }
+        .grid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        
+        /* Options Direct Layout & Bold Typography Assertions */
+        .grid-options button { font-weight: 900 !important; font-size: 1.12rem; padding: 18px 10px; border-radius: 12px; cursor: pointer; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+        .grid-options button:active { filter: brightness(0.85); }
+        .full-width-btn { grid-column: span 2; } 
+
+        /* SOLID COLOR BUTTON THEMES */
+        .flag-grid { width: 345px; max-height: 90vh; overflow-y: auto; }
+        .btn-flag-cardinal { background: #ff3b30 !important; color: #ffffff !important; border: 3px solid #ff3b30; }
+        .btn-flag-corner { background: #34c759 !important; color: #ffffff !important; border: 3px solid #34c759; } 
+        
+        /* Hotel Button Style Assertion */
+        .btn-flag-hotel { grid-column: span 2; background: #5856d6 !important; color: #ffffff !important; border: 3px solid #5856d6; }
+
+        /* Caution Menu Styles (Solid Yellow) */
+        .caution-grid { width: 310px; }
+        .btn-caution-opt { background: #ffcc00 !important; color: #000000 !important; border: 3px solid #ffcc00; } 
+
+        /* Police Menu Styles (Solid Blue) */
+        .police-grid { width: 300px; }
+        .btn-police-opt { background: #007aff !important; color: #ffffff !important; border: 3px solid #007aff; } 
+
+        /* STREET VIEW CAMERAS OVERLAY MODAL WINDOW */
+        .cam-list-grid { width: 350px; max-height: 85vh; overflow-y: auto; }
+        
+        .btn-camera-select { 
+            background: #34c759 !important; 
+            color: #ffffff !important; 
+            border: 3px solid #248a3d !important; 
+            text-align: left; 
+            padding: 14px 12px !important; 
+            font-size: 0.95rem !important; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
         }
-        #map {
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-        /* FIX: Robust, explicit sizing and styling for simulated taxi nodes */
-        .sim-taxi-vector-icon {
-            background: rgba(20, 20, 20, 0.95) !important;
-            border: 2px solid #ffcc00 !important;
-            border-radius: 6px !important;
-            color: #ffcc00 !important;
-            text-align: center !important;
-            font-weight: 900 !important;
-            font-size: 11px !important;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.6) !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-        /* FIX: Explicit styling for dynamic alert markers so text doesn't bleed into the background */
-        .alert-caution-wrapper {
-            background: #ff3b30 !important;
-            color: white !important;
-            padding: 5px 10px !important;
-            border-radius: 6px !important;
-            font-size: 11px !important;
-            font-weight: bold !important;
-            border: 1px solid white !important;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
-            white-space: nowrap !important;
-            display: inline-block !important;
-        }
-        /* Adjusting Leaflet internal popups to style nicely with dark theme */
-        .leaflet-popup-content-wrapper {
-            background: #222 !important;
-            color: #fff !important;
-            border: 1px solid #444 !important;
-            border-radius: 8px !important;
-        }
-        .leaflet-popup-tip {
-            background: #222 !important;
-        }
+        .btn-close-cam { background: #1c1c1e; color: white; width: 100%; margin-top: 12px; padding: 12px; border-radius: 8px; font-weight: 900; font-size: 1rem; border: none; cursor: pointer; text-transform: uppercase; } 
     </style>
 </head>
-<body>
+<body> 
 
-    <div id="map"></div>
+    <div id="map"></div> 
 
-    <div id="admin-panel" style="position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 2000; background: rgba(15, 15, 15, 0.96); border: 2px solid #ffcc00; padding: 14px; border-radius: 14px; color: white; width: 88%; max-width: 380px; box-shadow: 0 6px 20px rgba(0,0,0,0.85);">
-        <strong style="color: #ffcc00; display: block; margin-bottom: 8px; text-align: center; letter-spacing: 1px; font-size: 13px;">🎛️ ADMIN APP CONTROLS</strong>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <label style="font-size: 13px; font-weight: 500;">Alert Radius: <span id="radius-val" style="font-weight: bold; color: #34c759; font-size: 15px;">10</span> km</label>
-            <input type="range" id="radius-slider" min="1" max="25" value="10" style="width: 58%; cursor: pointer;" oninput="updateAdminRadius(this.value)">
-        </div>
-        <div style="font-size: 10px; color: #aaa; text-align: center; margin-top: 8px; border-top: 1px solid #333; padding-top: 6px;">
-            Simulating local vs wide-area filtering logic live.
-        </div>
+    <div class="top-actions">
+        <button class="action-btn btn-flag" onclick="showModal('flag-pop')">🔴<br><span>FLAG</span></button>
+        <button class="action-btn btn-caution" onclick="showModal('caution-type-pop')">⚠️<br><span>CAUTION</span></button>
+        <button class="action-btn btn-police" onclick="showModal('police-pop')">👮<br><span>POLICE</span></button>
+        <button class="action-btn btn-camera-top" onclick="openCameraListMenu()">🎥<br><span>CAMERAS</span></button>
+    </div> 
+
+    <div class="side-util left-side">
+        <button id="mute-toggle-btn" class="util-circle" onclick="handleMuteToggle()">AUDIO<br>ON</button>
+        <button id="audio-repeat-btn" class="util-circle active-repeat" onclick="replayLastAudioNarration()">REPLAY<br>MSG</button>
     </div>
+    <div class="side-util right-side">
+        <button id="lock-center-btn" class="util-circle active-center" onclick="handleRecenter()">MAP<br>LOCKED</button>
+    </div> 
+
+    <div id="screen-overlay" class="modal-overlay" onclick="hideModals()"></div> 
+
+    <div id="camera-menu-pop" class="driver-modal cam-list-grid">
+        <span class="modal-title">Street View Cameras</span>
+        <div class="grid-options" id="camera-list-options">
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/BurrardCornwall4.htm')">Burrard and Cornwall</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/cambiebridge.htm')">Cambie Bridge</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/granvilleHoweOnRamp.htm')">Granville Bridge</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/granville70th.htm')">Granville and 70th Avenue</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/granvillerobson.htm')">Granville and Robson</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/hastings.htm')">Hastings and Boundary Rd.</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/transcanada01.htm')">HWY 1 and 1st Ave</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/knightMarineBridge.htm')">Knight Street Bridge</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/oak4.htm')">Oak and 70th</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/denman3.htm')">W Georgia and Denman st.</button>
+        </div>
+        
+        <button class="btn-close-cam" onclick="hideModals()">Close Menu</button>
+    </div> 
+
+    <div id="flag-pop" class="driver-modal flag-grid">
+        <span class="modal-title">Drop Flag Intersection</span>
+        <div class="grid-options">
+            <button class="btn-flag-cardinal" onclick="dropFlagDirect('Northbound')">North</button>
+            <button class="btn-flag-cardinal" onclick="dropFlagDirect('Southbound')">South</button>
+            <button class="btn-flag-cardinal" onclick="dropFlagDirect('Eastbound')">East</button>
+            <button class="btn-flag-cardinal" onclick="dropFlagDirect('Westbound')">West</button>
+            
+            <button class="btn-flag-corner" onclick="dropFlagDirect('Northeast Corner')">Northeast</button>
+            <button class="btn-flag-corner" onclick="dropFlagDirect('Northwest Corner')">Northwest</button>
+            <button class="btn-flag-corner" onclick="dropFlagDirect('Southeast Corner')">Southeast</button>
+            <button class="btn-flag-corner" onclick="dropFlagDirect('Southwest Corner')">Southwest</button>
+
+            <button class="btn-flag-hotel full-width-btn" onclick="dropFlagDirect('Hotel Driveway')">🏨 HOTELS</button>
+        </div>
+    </div> 
+
+    <div id="caution-type-pop" class="driver-modal caution-grid">
+        <span class="modal-title">Caution Condition</span>
+        <div class="grid-options">
+            <button class="btn-caution-opt full-width-btn" onclick="selectCautionType('Mild traffic')">Mild Traffic</button>
+            <button class="btn-caution-opt full-width-btn" onclick="selectCautionType('Heavy traffic')">Heavy Traffic</button>
+            <button class="btn-caution-opt full-width-btn" onclick="selectCautionType('Accident')">Accident</button>
+            <button class="btn-caution-opt full-width-btn" onclick="selectCautionType('Road closure')">Road Closure</button>
+        </div>
+    </div> 
+
+    <div id="caution-dir-pop" class="driver-modal caution-grid">
+        <span class="modal-title">Caution Direction</span>
+        <div class="grid-options">
+            <button class="btn-caution-opt" onclick="dropCautionMarker('Northbound')">North</button>
+            <button class="btn-caution-opt" onclick="dropCautionMarker('Southbound')">South</button>
+            <button class="btn-caution-opt" onclick="dropCautionMarker('Eastbound')">East</button>
+            <button class="btn-caution-opt" onclick="dropCautionMarker('Westbound')">West</button>
+            <button class="btn-caution-opt full-width-btn" onclick="dropCautionMarker('All Directions')">All Directions</button>
+        </div>
+    </div> 
+
+    <div id="police-pop" class="driver-modal police-grid">
+        <span class="modal-title">Police Threat Zone</span>
+        <div class="grid-options">
+            <button class="btn-police-opt full-width-btn" onclick="selectPoliceType('radar')">Radar</button>
+            <button class="btn-police-opt full-width-btn" onclick="selectPoliceType('emergency')">Emergency</button>
+            <button class="btn-police-opt full-width-btn" onclick="selectPoliceType('hidden')">Hidden</button>
+        </div>
+    </div> 
+
+    <div id="police-dir-pop" class="driver-modal police-grid">
+        <span class="modal-title">Police Direction</span>
+        <div class="grid-options">
+            <button class="btn-police-opt" onclick="dropPoliceMarker('Northbound')">North</button>
+            <button class="btn-police-opt" onclick="dropPoliceMarker('Southbound')">South</button>
+            <button class="btn-police-opt" onclick="dropPoliceMarker('Eastbound')">East</button>
+            <button class="btn-police-opt" onclick="dropPoliceMarker('Westbound')">West</button>
+            <button class="btn-police-opt full-width-btn" onclick="dropPoliceMarker('All Directions')">All Directions</button>
+        </div>
+    </div> 
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        let map;
-        let vehiclePos = { lat: 49.2611, lng: -123.1281 }; // Downtown/Central Vancouver core anchoring
-        let currentAddressData = { houseNumber: "", streetName: "" };
+        // =========================================================================================
+        // MAP CORE INITIALIZER
+        // =========================================================================================
+        const map = L.map('map', { 
+            zoomControl: false, 
+            maxZoom: 18,
+            dragging: true,
+            touchZoom: true,
+            doubleClickZoom: true,
+            scrollWheelZoom: true
+        }).setView([49.2611, -123.1281], 12); // Slightly zoomed out to view multiple cities
         
-        let simulatedTaxis = [];
-        let simMarkersMap = {}; 
-        let adminAlertRadiusKm = 10; 
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); 
 
-        // Initialize Map Layout
-        function initMap() {
-            // FIX: Added padding option to keep popups completely clear of our UI panel boundaries
-            map = L.map('map', {
-                zoomControl: false,
-                closePopupOnClick: false
-            }).setView([vehiclePos.lat, vehiclePos.lng], 13);
+        // Core Status States
+        let vehiclePos = null;
+        let lastGeocodedPos = null;
+        let vehicleMarker = null;
+        let trackVehicleView = true; 
+        let audioMuted = false;
+        let wakeLockToken = null;
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CARTO'
-            }).addTo(map);
+        // Selection variables
+        let chosenCautionType = "";
+        let chosenPoliceType = "radar"; 
 
-            // Self icon marker configuration
-            const myIcon = L.divIcon({
-                className: 'my-vehicle-marker-icon',
-                html: '<div style="width:14px; height:14px; background:#34c759; border:2.5px solid white; border-radius:50%; box-shadow: 0 0 8px #34c759;"></div>',
-                iconSize: [14, 14],
-                iconAnchor: [7, 7]
+        // Geocoding caches
+        let currentAddressData = { houseNumber: "", streetName: "Unknown Street", isLoaded: false }; 
+        let lastSpokenSpeechString = "";
+
+        // Moving Yellow Taxi Icon
+        const taxiIconStyle = L.divIcon({
+            className: 'taxi-vector-icon',
+            html: 'TAXI',
+            iconSize: [38, 24],
+            iconAnchor: [19, 12]
+        }); 
+
+        // =========================================================================================
+        // CAMERA ACTION CONTROLLER (NEW TAB BYPASS MECHANISM)
+        // =========================================================================================
+        function openCameraListMenu() {
+            showModal('camera-menu-pop');
+        } 
+
+        function openLiveCameraTab(targetUrl) {
+            window.open(targetUrl, '_blank');
+        } 
+
+        // GEOLOCATION ENGINE
+        map.locate({ watch: true, enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }); 
+
+        map.on('locationfound', function(e) {
+            vehiclePos = e.latlng;
+            if (!vehicleMarker) {
+                vehicleMarker = L.marker(e.latlng, { icon: taxiIconStyle }).addTo(map);
+                map.setView(e.latlng, 14);
+            } else {
+                vehicleMarker.setLatLng(e.latlng);
+            } 
+            if (trackVehicleView) {
+                map.setView(e.latlng, 14);
+            } 
+            fetchAddressFromCoordinates(e.latlng);
+        }); 
+
+        map.on('dragstart', function() {
+            trackVehicleView = false;
+            const btn = document.getElementById('lock-center-btn');
+            btn.className = "util-circle";
+            btn.innerHTML = "MAP<br>FREE";
+        }); 
+
+
+        // =========================================================================================
+        // REVERSE GEOLOCATION ENGINE
+        // =========================================================================================
+        function fetchAddressFromCoordinates(latlng, forcedCallback = null) {
+            let distanceMoved = 0;
+            if (lastGeocodedPos) {
+                distanceMoved = latlng.distanceTo(lastGeocodedPos);
+            } 
+
+            if (lastGeocodedPos && distanceMoved < 15 && currentAddressData.isLoaded && !forcedCallback) {
+                if (forcedCallback) forcedCallback();
+                return;
+            } 
+
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&zoom=18&addressdetails=1&_cb=${Date.now()}`; 
+
+            fetch(url, { headers: { 'Accept-Language': 'en' } })
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.address) {
+                        currentAddressData.streetName = data.address.road || data.address.pedestrian || data.address.suburb || "Street Route";
+                        currentAddressData.houseNumber = data.address.house_number || "";
+                        currentAddressData.isLoaded = true;
+                        lastGeocodedPos = latlng;
+                    }
+                    if (forcedCallback) forcedCallback();
+                })
+                .catch(err => {
+                    console.log("Geocoding recovery active: " + err.message);
+                    if (forcedCallback) forcedCallback();
+                });
+        } 
+
+        function showModal(id) {
+            document.getElementById('screen-overlay').style.display = 'block';
+            document.getElementById(id).style.display = 'block';
+        } 
+
+        function hideModals() {
+            document.getElementById('screen-overlay').style.display = 'none';
+            document.querySelectorAll('.driver-modal').forEach(m => m.style.display = 'none');
+        } 
+
+        function handleRecenter() {
+            trackVehicleView = true;
+            const btn = document.getElementById('lock-center-btn');
+            btn.className = "util-circle active-center";
+            btn.innerHTML = "MAP<br>LOCKED";
+            if (vehiclePos) {
+                map.setView(vehiclePos, 14);
+            }
+        } 
+
+        function handleMuteToggle() {
+            audioMuted = !audioMuted;
+            const btn = document.getElementById('mute-toggle-btn');
+            if(audioMuted) {
+                btn.className = "util-circle active-mute";
+                btn.innerHTML = "AUDIO<br>MUTED";
+            } else {
+                btn.className = "util-circle";
+                btn.innerHTML = "AUDIO<br>ON";
+            }
+        } 
+
+
+        // =========================================================================================
+        // DISPATCH PASSENGER FLAG MARKER (REUSABLE SUBROUTINE)
+        // =========================================================================================
+        function dropFlagDirect(selectionValue, customPos = null) {
+            hideModals(); 
+            const targetPos = customPos || vehiclePos; 
+            if (!targetPos) return; 
+
+            fetchAddressFromCoordinates(targetPos, function() {
+                const redManIcon = L.divIcon({
+                    className: 'red-man-icon',
+                    html: selectionValue === 'Hotel Driveway' ? '🏨' : '🚶',
+                    iconSize: [34, 34],
+                    iconAnchor: [17, 32]
+                }); 
+
+                const flagMarker = L.marker(targetPos, { icon: redManIcon }).addTo(map);
+                const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName;
+                const navigationUrl = `https://www.google.com/maps/search/?api=1&query=${targetPos.lat},${targetPos.lng}`;
+
+                let headerLabel = `<strong style="color:#ff3b30;">FLAG WAITING</strong>`;
+                if (selectionValue === 'Hotel Driveway') {
+                    headerLabel = `<strong style="color:#5856d6;">HOTEL DISPATCH FLAG</strong>`;
+                }
+
+                flagMarker.bindPopup(`
+                    ${headerLabel}<br>
+                    <strong>Placement:</strong> ${selectionValue}<br>
+                    <span>Location: ${completeAddress}</span><br><br>
+                    <a href="${navigationUrl}" target="_blank" style="display:block; text-align:center; background:#007aff; color:white; font-weight:bold; padding:8px 10px; border-radius:6px; text-decoration:none; margin-top:5px; text-transform:uppercase; font-size:11px;">Navigate to Flag</a>
+                `);
+
+                // Automatically pop open if it's nearby
+                if (!customPos) {
+                    flagMarker.openPopup();
+                    dispatchAudioNarration('Flag', selectionValue); 
+                }
+
+                // Auto-clear flags after 5 minutes to prevent map clutter
+                setTimeout(() => {
+                    map.removeLayer(flagMarker);
+                }, 300000); 
             });
-            L.marker([vehiclePos.lat, vehiclePos.lng], { icon: myIcon }).addTo(map).bindPopup("<b>Your Active Position</b>");
-        }
+        } 
 
-        // Live slider updates
-        function updateAdminRadius(val) {
-            adminAlertRadiusKm = parseInt(val);
-            document.getElementById('radius-val').innerText = val;
-            console.log(`[ADMIN] Filtering boundary recalibrated to: ${adminAlertRadiusKm} KM`);
-        }
 
-        // Distance formula logic
-        function calculateDistanceKm(lat1, lon1, lat2, lon2) {
-            const R = 6371; 
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = 
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); 
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-            return R * c; 
-        }
+        // =========================================================================================
+        // CAUTION LOGIC SUBROUTINES
+        // =========================================================================================
+        function selectCautionType(type) {
+            chosenCautionType = type;
+            hideModals();
+            showModal('caution-dir-pop');
+        } 
 
-        // FIX: Re-engineered dynamic markup deployment injection for safety on mobile rendering engines
-        function createCautionMarkerOnMap(type, direction, latlng) {
-            const dynamicHtml = `<div class="alert-caution-wrapper">⚠️ ${type} (${direction})</div>`;
-            
-            const cautionIcon = L.divIcon({
-                html: dynamicHtml,
-                className: 'custom-leaflet-alert-node',
-                iconAnchor: [40, 12],
-                iconSize: [null, null] // Prevents Leaflet from locking sizes implicitly
+        function dropCautionMarker(directionValue) {
+            hideModals(); 
+            if (!vehiclePos) return; 
+
+            const targetPos = vehiclePos;
+            const typeLabel = chosenCautionType;
+            const directionLabel = directionValue; 
+
+            fetchAddressFromCoordinates(targetPos, function() {
+                let cautionIconHtml = "";
+                let classLabel = "";
+                let anchorOffsets = [15, 15];
+                let customSize = [30, 30];
+
+                if (typeLabel === 'Mild traffic') {
+                    cautionIconHtml = "🚘🚘";
+                    classLabel = "caution-traffic-icon";
+                    customSize = [50, 26];
+                    anchorOffsets = [25, 13];
+                } else if (typeLabel === 'Heavy traffic') {
+                    cautionIconHtml = "🚘🚘🚘🚘";
+                    classLabel = "caution-traffic-icon";
+                    customSize = [90, 26];
+                    anchorOffsets = [45, 13];
+                } else if (typeLabel === 'Accident') {
+                    cautionIconHtml = "💥🚗";
+                    classLabel = "caution-accident-icon";
+                    customSize = [44, 34];
+                    anchorOffsets = [22, 17];
+                } else if (typeLabel === 'Road closure') {
+                    cautionIconHtml = "🚧";
+                    classLabel = "caution-closure-icon";
+                    customSize = [34, 34];
+                    anchorOffsets = [17, 17];
+                }
+
+                const cautionDivIcon = L.divIcon({
+                    className: classLabel,
+                    html: cautionIconHtml,
+                    iconSize: customSize,
+                    iconAnchor: anchorOffsets
+                });
+
+                const dynamicMarker = L.marker(targetPos, { icon: cautionDivIcon }).addTo(map); 
+                const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName; 
+
+                dynamicMarker.bindPopup(`
+                    <strong style="color:#b38f00;">${typeLabel.toUpperCase()}</strong><br>
+                    <strong>Direction:</strong> ${directionLabel}<br>
+                    <span>Location: ${completeAddress}</span>
+                `).openPopup(); 
+
+                dispatchAudioNarration('Caution', { type: typeLabel, direction: directionLabel });
+
+                setTimeout(() => {
+                    map.removeLayer(dynamicMarker);
+                }, 1200000);
             });
+        } 
+
+
+        // =========================================================================================
+        // POLICE PIPELINE SNIPPET
+        // =========================================================================================
+        function selectPoliceType(type) {
+            chosenPoliceType = type.toLowerCase().trim();
+            hideModals();
+            showModal('police-dir-pop');
+        } 
+
+        function dropPoliceMarker(directionValue) {
+            hideModals(); 
+            if (!vehiclePos) return; 
+
+            const targetPos = vehiclePos;
+            const typeLabel = chosenPoliceType; 
+            const directionLabel = directionValue; 
+
+            fetchAddressFromCoordinates(targetPos, function() {
+                const policeIcon = L.divIcon({
+                    className: 'police-officer-icon',
+                    html: '👮',
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 18]
+                });
+
+                const officerMarker = L.marker(targetPos, { icon: policeIcon }).addTo(map);
+                const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName; 
+
+                officerMarker.bindPopup(`
+                    <strong style="color:#007aff;">POLICE ENFORCEMENT</strong><br>
+                    <strong>Type:</strong> ${typeLabel.toUpperCase()} (${directionLabel})<br>
+                    <span>Location: ${completeAddress}</span>
+                `).openPopup(); 
+
+                dispatchAudioNarration('Police', { type: typeLabel, direction: directionLabel });
+
+                setTimeout(() => {
+                    map.removeLayer(officerMarker);
+                }, 1800000);
+            });
+        } 
+
+
+        // =========================================================================================
+        // AUDIO ADDRESS CONVERTER
+        // =========================================================================================
+        function breakHouseNumbersIntoCouples(numberStr) {
+            if (!numberStr || isNaN(numberStr)) return numberStr;
             
-            const marker = L.marker([latlng.lat, latlng.lng], { icon: cautionIcon }).addTo(map);
-            
-            let popupContent = `<b>${type} Alert</b><br>Direction: ${direction}`;
-            if (currentAddressData.streetName) {
-                popupContent += `<br>Near: ${currentAddressData.houseNumber} ${currentAddressData.streetName}`;
+            if (numberStr.length === 4) {
+                const leadingPair = parseInt(numberStr.substring(0, 2), 10);
+                const trailingPair = parseInt(numberStr.substring(2, 4), 10);
+                if (trailingPair === 0) return `${leadingPair} hundred`;
+                if (trailingPair < 10) return `${leadingPair} oh ${trailingPair}`;
+                return `${leadingPair} ${trailingPair}`;
             }
             
-            marker.bindPopup(popupContent);
+            if (numberStr.length === 3) {
+                const leadingDigit = parseInt(numberStr.substring(0, 1), 10);
+                const trailingPair = parseInt(numberStr.substring(1, 3), 10);
+                if (trailingPair === 0) return `${leadingDigit} hundred`;
+                if (trailingPair < 10) return `${leadingDigit} oh ${trailingPair}`;
+                return `${leadingDigit} ${trailingPair}`;
+            } 
+
+            return numberStr;
+        } 
+
+
+        // =========================================================================================
+        // CENTRAL TEXT-TO-SPEECH BROADCAST MACHINE
+        // =========================================================================================
+        function dispatchAudioNarration(category, payload) {
+            const spokenHouseNumber = breakHouseNumbersIntoCouples(currentAddressData.houseNumber);
+            const addressAudioString = spokenHouseNumber ? `${spokenHouseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName;
+            
+            let finalSpeechString = "";
+            
+            if (category === 'Flag') {
+                if (payload === 'Hotel Driveway') {
+                    finalSpeechString = `One flag waiting inside the driveway of the hotel at ${addressAudioString}`;
+                } else {
+                    finalSpeechString = `One flag waiting ${payload.toLowerCase()} at ${addressAudioString}`;
+                }
+            } 
+            else if (category === 'Caution') {
+                finalSpeechString = `One ${payload.type.toLowerCase()} reported ahead ${payload.direction.toLowerCase()} at ${addressAudioString}`;
+            } 
+            else if (category === 'Police') {
+                const speechDirection = payload.direction.toLowerCase();
+                
+                if (payload.type === 'emergency') {
+                    finalSpeechString = `One police reported ahead ${speechDirection} at ${addressAudioString} emergency`;
+                } 
+                else if (payload.type === 'hidden') {
+                    finalSpeechString = `One police reported ahead ${speechDirection} at ${addressAudioString} they are hiding they are hiding`;
+                } 
+                else {
+                    finalSpeechString = `One police reported ahead ${speechDirection} at ${addressAudioString} Radar Radar`;
+                }
+            } 
+
+            lastSpokenSpeechString = finalSpeechString;
+
+            if (audioMuted) return; 
+
+            const clearHardwareBuffer = new SpeechSynthesisUtterance("");
+            window.speechSynthesis.speak(clearHardwareBuffer); 
+
+            setTimeout(() => {
+                const utterance = new SpeechSynthesisUtterance(finalSpeechString);
+                utterance.rate = 1.0; 
+                window.speechSynthesis.speak(utterance);
+            }, 1500);
+        } 
+
+
+        // =========================================================================================
+        // INSTANT AUDIO REPLAY
+        // =========================================================================================
+        function replayLastAudioNarration() {
+            if (!lastSpokenSpeechString) return;
+            
+            const clearHardwareBuffer = new SpeechSynthesisUtterance("");
+            window.speechSynthesis.speak(clearHardwareBuffer); 
+
+            setTimeout(() => {
+                const utterance = new SpeechSynthesisUtterance(lastSpokenSpeechString);
+                utterance.rate = 1.0; 
+                window.speechSynthesis.speak(utterance);
+            }, 200);
         }
 
+
         // =========================================================================================
-        // 🚀 LIVE SANDBOX SIMULATOR ENGINE (WITH ADAPTIVE DATA FILTERING)
+        // 🚀 SCATTERED FLEET SIMULATOR ENGINE (20 VEHICLES IN MULTIPLE CITIES)
         // =========================================================================================
+        let simulatedTaxis = [];
+        let simMarkersMap = {};
+
         function initTaxiSimulator() {
-            console.log("Sandbox Engine Online: Deploying Fleet Coordinates...");
+            console.log("Deploying 20 Multi-City Simulated Vehicles...");
 
-            simulatedTaxis = Array.from({ length: 10 }, (_, i) => {
+            // Regional city anchors
+            const hubs = [
+                { lat: 49.2611, lng: -123.1281 }, // Vancouver Core
+                { lat: 49.1666, lng: -123.1336 }, // Richmond
+                { lat: 49.1913, lng: -122.8490 }  // Surrey
+            ];
+
+            // Generate 20 vehicles distributed randomly across the three cities
+            simulatedTaxis = Array.from({ length: 20 }, (_, i) => {
                 const idNum = i + 1;
-                const spreadFactorLat = idNum > 5 ? 0.14 : 0.02; 
-                const spreadFactorLng = idNum > 5 ? 0.18 : 0.02;
-
+                const assignedHub = hubs[i % hubs.length]; // Split evenly among cities
+                
                 return {
                     id: `sim_cab_${idNum}`,
                     label: `YC${100 + idNum}`,
-                    lat: vehiclePos.lat + (Math.random() - 0.5) * spreadFactorLat,
-                    lng: vehiclePos.lng + (Math.random() - 0.5) * spreadFactorLng,
-                    speed: 0.00010 
+                    lat: assignedHub.lat + (Math.random() - 0.5) * 0.06,
+                    lng: assignedHub.lng + (Math.random() - 0.5) * 0.08,
+                    speed: 0.00015 
                 };
             });
 
-            // Animate taxi steps smoothly
+            // Loop A: Animate the 20 cars moving smoothly on the grid
             setInterval(() => {
                 simulatedTaxis.forEach(taxi => {
                     taxi.lat += (Math.random() - 0.5) * taxi.speed;
                     taxi.lng += (Math.random() - 0.5) * taxi.speed;
-                    updateSimulatedMarkerOnMap(taxi);
-                });
-            }, 3500);
-
-            // Core filtering simulation check loops
-            setInterval(() => {
-                if (simulatedTaxis.length === 0 || !vehiclePos) return;
-
-                const reportingTaxi = simulatedTaxis[Math.floor(Math.random() * simulatedTaxis.length)];
-                const alertPos = L.latLng(reportingTaxi.lat, reportingTaxi.lng);
-                const distanceToMe = calculateDistanceKm(vehiclePos.lat, vehiclePos.lng, alertPos.lat, alertPos.lng);
-
-                console.log(`[NETWORK EVENT] Cab ${reportingTaxi.label} dropped alert ${distanceToMe.toFixed(1)} km away.`);
-
-                if (distanceToMe <= adminAlertRadiusKm) {
-                    const directions = ['Northbound', 'Southbound', 'Eastbound', 'Westbound'];
-                    const randomDirection = directions[Math.floor(Math.random() * directions.length)];
                     
-                    const oldHouse = currentAddressData.houseNumber;
-                    const oldStreet = currentAddressData.streetName;
+                    // Render/update their positions on map
+                    const customHtml = `<div style="font-weight:bold; font-size:9px; text-align:center; line-height:22px;">YC${taxi.id.split('_')[2]}</div>`;
+                    const simIcon = L.divIcon({
+                        className: 'taxi-vector-icon',
+                        html: customHtml,
+                        iconSize: [36, 24],
+                        iconAnchor: [18, 12]
+                    });
 
-                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${alertPos.lat}&lon=${alertPos.lng}&zoom=18`)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data && data.address) {
-                                currentAddressData.streetName = data.address.road || data.address.pedestrian || "Main Route";
-                                currentAddressData.houseNumber = data.address.house_number || "";
-                            }
-                            createCautionMarkerOnMap('Heavy traffic', randomDirection, alertPos);
-                            
-                            setTimeout(() => {
-                                currentAddressData.houseNumber = oldHouse;
-                                currentAddressData.streetName = oldStreet;
-                            }, 2000);
-                        }).catch(() => {
-                            createCautionMarkerOnMap('Heavy traffic', randomDirection, alertPos);
-                        });
-                } else {
-                    console.log(`[DATA BLOCKED] Filtered out event at ${distanceToMe.toFixed(1)}km to preserve system pings.`);
+                    if (!simMarkersMap[taxi.id]) {
+                        simMarkersMap[taxi.id] = L.marker([taxi.lat, taxi.lng], { icon: simIcon }).addTo(map);
+                        simMarkersMap[taxi.id].bindPopup(`<b>Simulated Unit</b><br>Vehicle Number: YC${taxi.id.split('_')[2]}`);
+                    } else {
+                        simMarkersMap[taxi.id].setLatLng([taxi.lat, taxi.lng]);
+                    }
+                });
+            }, 3000);
+
+            // Loop B: Automated high-frequency flag dropping from simulator cars
+            setInterval(() => {
+                if (simulatedTaxis.length === 0) return;
+
+                // Pick an active simulated car randomly
+                const randomCab = simulatedTaxis[Math.floor(Math.random() * simulatedTaxis.length)];
+                const flagTypes = ['Northbound', 'Southbound', 'Eastbound', 'Westbound', 'Hotel Driveway'];
+                const randomType = flagTypes[Math.floor(Math.random() * flagTypes.length)];
+
+                // Drop an active navigation flag marker at their current moving coordinates
+                dropFlagDirect(randomType, { lat: randomCab.lat, lng: randomCab.lng });
+                console.log(`[SIMULATOR] Vehicle ${randomCab.label} dropped a Flag in the grid.`);
+            }, 8000); // New flags drop every 8 seconds so you can click and test the routing button immediately!
+        }
+
+
+        // =========================================================================================
+        // SCREEN ANTI-BLACKOUT WAKELOCK
+        // =========================================================================================
+        async function maintainScreenWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLockToken = await navigator.wakeLock.request('screen');
                 }
-            }, 12000); 
-        }
-
-        function updateSimulatedMarkerOnMap(taxi) {
-            // FIX: Encapsulated label text string neatly within custom-styled css parameters directly
-            const iconContent = `<span>${taxi.label}</span>`;
-            const simIconStyle = L.divIcon({
-                className: 'sim-taxi-vector-icon',
-                html: iconContent,
-                iconSize: [46, 22],
-                iconAnchor: [23, 11]
-            });
-
-            if (!simMarkersMap[taxi.id]) {
-                simMarkersMap[taxi.id] = L.marker([taxi.lat, taxi.lng], { icon: simIconStyle }).addTo(map);
-                simMarkersMap[taxi.id].bindPopup(`<strong>Active Taxi Unit</strong><br>Unit identifier: ${taxi.label}`);
-            } else {
-                simMarkersMap[taxi.id].setLatLng([taxi.lat, taxi.lng]);
+            } catch (err) {
+                console.log("Wake lock notice: " + err.message);
             }
-        }
+        } 
 
-        window.addEventListener('DOMContentLoaded', () => {
-            initMap();
+        window.addEventListener('load', () => {
             initTaxiSimulator();
+            maintainScreenWakeLock();
+        }); 
+
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLockToken !== null && document.visibilityState === 'visible') {
+                maintainScreenWakeLock();
+            }
         });
     </script>
 </body>
