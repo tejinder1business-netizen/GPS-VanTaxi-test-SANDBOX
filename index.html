@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tactical Driver Grid - Sandbox Engine</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -20,15 +20,42 @@
             height: 100%;
             z-index: 1;
         }
-        /* Style for the custom simulated taxi map labels */
+        /* FIX: Robust, explicit sizing and styling for simulated taxi nodes */
         .sim-taxi-vector-icon {
-            background: rgba(0, 0, 0, 0.85);
-            border: 2px solid #ffcc00;
-            border-radius: 6px;
-            text-align: center;
-            line-height: 22px;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            background: rgba(20, 20, 20, 0.95) !important;
+            border: 2px solid #ffcc00 !important;
+            border-radius: 6px !important;
+            color: #ffcc00 !important;
+            text-align: center !important;
+            font-weight: 900 !important;
+            font-size: 11px !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.6) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        /* FIX: Explicit styling for dynamic alert markers so text doesn't bleed into the background */
+        .alert-caution-wrapper {
+            background: #ff3b30 !important;
+            color: white !important;
+            padding: 5px 10px !important;
+            border-radius: 6px !important;
+            font-size: 11px !important;
+            font-weight: bold !important;
+            border: 1px solid white !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
+            white-space: nowrap !important;
+            display: inline-block !important;
+        }
+        /* Adjusting Leaflet internal popups to style nicely with dark theme */
+        .leaflet-popup-content-wrapper {
+            background: #222 !important;
+            color: #fff !important;
+            border: 1px solid #444 !important;
+            border-radius: 8px !important;
+        }
+        .leaflet-popup-tip {
+            background: #222 !important;
         }
     </style>
 </head>
@@ -36,58 +63,59 @@
 
     <div id="map"></div>
 
-    <div id="admin-panel" style="position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(15, 15, 15, 0.95); border: 2px solid #ffcc00; padding: 15px; border-radius: 14px; color: white; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.75);">
-        <strong style="color: #ffcc00; display: block; margin-bottom: 8px; text-align: center; letter-spacing: 1px; font-size: 14px;">🎛️ ADMIN APP CONTROLS</strong>
+    <div id="admin-panel" style="position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 2000; background: rgba(15, 15, 15, 0.96); border: 2px solid #ffcc00; padding: 14px; border-radius: 14px; color: white; width: 88%; max-width: 380px; box-shadow: 0 6px 20px rgba(0,0,0,0.85);">
+        <strong style="color: #ffcc00; display: block; margin-bottom: 8px; text-align: center; letter-spacing: 1px; font-size: 13px;">🎛️ ADMIN APP CONTROLS</strong>
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <label style="font-size: 13px;">Alert Radius: <span id="radius-val" style="font-weight: bold; color: #34c759; font-size: 15px;">10</span> km</label>
-            <input type="range" id="radius-slider" min="1" max="25" value="10" style="width: 60%; cursor: pointer;" oninput="updateAdminRadius(this.value)">
+            <label style="font-size: 13px; font-weight: 500;">Alert Radius: <span id="radius-val" style="font-weight: bold; color: #34c759; font-size: 15px;">10</span> km</label>
+            <input type="range" id="radius-slider" min="1" max="25" value="10" style="width: 58%; cursor: pointer;" oninput="updateAdminRadius(this.value)">
         </div>
-        <div style="font-size: 10px; color: #aaa; text-align: center; margin-top: 8px; border-top: 1px solid #333; padding-top: 5px;">
+        <div style="font-size: 10px; color: #aaa; text-align: center; margin-top: 8px; border-top: 1px solid #333; padding-top: 6px;">
             Simulating local vs wide-area filtering logic live.
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Global variables for tracking coordinates
         let map;
-        let vehiclePos = { lat: 49.2611, lng: -123.1281 }; // Centered near central Vancouver
+        let vehiclePos = { lat: 49.2611, lng: -123.1281 }; // Downtown/Central Vancouver core anchoring
         let currentAddressData = { houseNumber: "", streetName: "" };
         
         let simulatedTaxis = [];
         let simMarkersMap = {}; 
-        let adminAlertRadiusKm = 10; // Default admin benchmark setting
+        let adminAlertRadiusKm = 10; 
 
         // Initialize Map Layout
         function initMap() {
+            // FIX: Added padding option to keep popups completely clear of our UI panel boundaries
             map = L.map('map', {
-                zoomControl: false 
+                zoomControl: false,
+                closePopupOnClick: false
             }).setView([vehiclePos.lat, vehiclePos.lng], 13);
 
-            // Load high-contrast dark tactical map tiles
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+                attribution: '&copy; OpenStreetMap &copy; CARTO'
             }).addTo(map);
 
-            // Add your own vehicle marker
+            // Self icon marker configuration
             const myIcon = L.divIcon({
-                className: 'my-vehicle-icon',
-                html: '<div style="width:12px; height:12px; background:#34c759; border:2px solid white; border-radius:50%;"></div>',
-                iconSize: [12, 12]
+                className: 'my-vehicle-marker-icon',
+                html: '<div style="width:14px; height:14px; background:#34c759; border:2.5px solid white; border-radius:50%; box-shadow: 0 0 8px #34c759;"></div>',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7]
             });
-            L.marker([vehiclePos.lat, vehiclePos.lng], { icon: myIcon }).addTo(map).bindPopup("Your Taxi Location");
+            L.marker([vehiclePos.lat, vehiclePos.lng], { icon: myIcon }).addTo(map).bindPopup("<b>Your Active Position</b>");
         }
 
-        // Admin function to update operational radius live from screen slider
+        // Live slider updates
         function updateAdminRadius(val) {
             adminAlertRadiusKm = parseInt(val);
             document.getElementById('radius-val').innerText = val;
             console.log(`[ADMIN] Filtering boundary recalibrated to: ${adminAlertRadiusKm} KM`);
         }
 
-        // Mathematical Formula: Calculates precise distance in kilometers between two GPS nodes
+        // Distance formula logic
         function calculateDistanceKm(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radius of the earth in km
+            const R = 6371; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = 
@@ -97,41 +125,48 @@
             return R * c; 
         }
 
-        // Fallback function to generate map markers visually if alert drops clear validation
+        // FIX: Re-engineered dynamic markup deployment injection for safety on mobile rendering engines
         function createCautionMarkerOnMap(type, direction, latlng) {
+            const dynamicHtml = `<div class="alert-caution-wrapper">⚠️ ${type} (${direction})</div>`;
+            
             const cautionIcon = L.divIcon({
-                html: `<div style="background:#ff3b30; color:white; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; border:1px solid white; white-space:nowrap;">⚠️ ${type} (${direction})</div>`,
-                className: 'alert-caution-marker',
-                iconAnchor: [25, 10]
+                html: dynamicHtml,
+                className: 'custom-leaflet-alert-node',
+                iconAnchor: [40, 12],
+                iconSize: [null, null] // Prevents Leaflet from locking sizes implicitly
             });
             
             const marker = L.marker([latlng.lat, latlng.lng], { icon: cautionIcon }).addTo(map);
-            marker.bindPopup(`<b>${type} Alert</b><br>Direction: ${direction}<br>Location: ${currentAddressData.houseNumber} ${currentAddressData.streetName}`).openPopup();
+            
+            let popupContent = `<b>${type} Alert</b><br>Direction: ${direction}`;
+            if (currentAddressData.streetName) {
+                popupContent += `<br>Near: ${currentAddressData.houseNumber} ${currentAddressData.streetName}`;
+            }
+            
+            marker.bindPopup(popupContent);
         }
 
         // =========================================================================================
         // 🚀 LIVE SANDBOX SIMULATOR ENGINE (WITH ADAPTIVE DATA FILTERING)
         // =========================================================================================
         function initTaxiSimulator() {
-            console.log("Sandbox Engine Online: Generating Scattered Fleet Coordinates...");
+            console.log("Sandbox Engine Online: Deploying Fleet Coordinates...");
 
-            // Generate 10 vehicles scattered wider (Vancouver core, Burnaby, Richmond, North Van)
             simulatedTaxis = Array.from({ length: 10 }, (_, i) => {
                 const idNum = i + 1;
-                // Give some taxis a much wider spread factor to test out the distance filters
-                const spreadFactorLat = idNum > 5 ? 0.16 : 0.02; 
-                const spreadFactorLng = idNum > 5 ? 0.22 : 0.02;
+                const spreadFactorLat = idNum > 5 ? 0.14 : 0.02; 
+                const spreadFactorLng = idNum > 5 ? 0.18 : 0.02;
 
                 return {
                     id: `sim_cab_${idNum}`,
                     label: `YC${100 + idNum}`,
                     lat: vehiclePos.lat + (Math.random() - 0.5) * spreadFactorLat,
                     lng: vehiclePos.lng + (Math.random() - 0.5) * spreadFactorLng,
-                    speed: 0.00012 
+                    speed: 0.00010 
                 };
             });
 
-            // Loop 1: Animate simulated cars smoothly across coordinates
+            // Animate taxi steps smoothly
             setInterval(() => {
                 simulatedTaxis.forEach(taxi => {
                     taxi.lat += (Math.random() - 0.5) * taxi.speed;
@@ -140,27 +175,20 @@
                 });
             }, 3500);
 
-            // Loop 2: Random taxi triggers a system alert. ONLY nearby cars pass validation rules!
+            // Core filtering simulation check loops
             setInterval(() => {
                 if (simulatedTaxis.length === 0 || !vehiclePos) return;
 
-                // Pick an arbitrary driver profile out of the generated cluster
                 const reportingTaxi = simulatedTaxis[Math.floor(Math.random() * simulatedTaxis.length)];
                 const alertPos = L.latLng(reportingTaxi.lat, reportingTaxi.lng);
-
-                // Run data protection check: Is the alert dropped inside or outside our filter rules?
                 const distanceToMe = calculateDistanceKm(vehiclePos.lat, vehiclePos.lng, alertPos.lat, alertPos.lng);
 
-                console.log(`[NETWORK EVENT] Cab ${reportingTaxi.label} dropped a packet ${distanceToMe.toFixed(1)} km away.`);
+                console.log(`[NETWORK EVENT] Cab ${reportingTaxi.label} dropped alert ${distanceToMe.toFixed(1)} km away.`);
 
-                // ADMIN CRITERIA RULE: If distance exceeds slider boundary, drop packet to preserve data limits!
                 if (distanceToMe <= adminAlertRadiusKm) {
-                    console.log(`[DATA PASSED] Incoming alert verified inside the ${adminAlertRadiusKm}km operational radius.`);
-                    
                     const directions = ['Northbound', 'Southbound', 'Eastbound', 'Westbound'];
                     const randomDirection = directions[Math.floor(Math.random() * directions.length)];
                     
-                    // Cache existing values to perform reverse lookup
                     const oldHouse = currentAddressData.houseNumber;
                     const oldStreet = currentAddressData.streetName;
 
@@ -168,13 +196,11 @@
                         .then(res => res.json())
                         .then(data => {
                             if (data && data.address) {
-                                currentAddressData.streetName = data.address.road || data.address.pedestrian || "Main Thoroughfare";
+                                currentAddressData.streetName = data.address.road || data.address.pedestrian || "Main Route";
                                 currentAddressData.houseNumber = data.address.house_number || "";
                             }
-                            
-                            // Render marker since it successfully cleared our radius thresholds
                             createCautionMarkerOnMap('Heavy traffic', randomDirection, alertPos);
-
+                            
                             setTimeout(() => {
                                 currentAddressData.houseNumber = oldHouse;
                                 currentAddressData.streetName = oldStreet;
@@ -183,30 +209,29 @@
                             createCautionMarkerOnMap('Heavy traffic', randomDirection, alertPos);
                         });
                 } else {
-                    console.log(`[DATA BLOCKED] Ping dropped completely. Target falls outside your current ${adminAlertRadiusKm}km threshold.`);
+                    console.log(`[DATA BLOCKED] Filtered out event at ${distanceToMe.toFixed(1)}km to preserve system pings.`);
                 }
-            }, 12000); // Triggers every 12 seconds in sandbox mode for faster testing
+            }, 12000); 
         }
 
-        // Render moving vector graphics on screen for simulated fleet members
         function updateSimulatedMarkerOnMap(taxi) {
-            const customHtml = `<div style="font-weight:900; font-size:10px; color:#ffcc00;">${taxi.label}</div>`;
+            // FIX: Encapsulated label text string neatly within custom-styled css parameters directly
+            const iconContent = `<span>${taxi.label}</span>`;
             const simIconStyle = L.divIcon({
                 className: 'sim-taxi-vector-icon',
-                html: customHtml,
-                iconSize: [50, 24],
-                iconAnchor: [25, 12]
+                html: iconContent,
+                iconSize: [46, 22],
+                iconAnchor: [23, 11]
             });
 
             if (!simMarkersMap[taxi.id]) {
                 simMarkersMap[taxi.id] = L.marker([taxi.lat, taxi.lng], { icon: simIconStyle }).addTo(map);
-                simMarkersMap[taxi.id].bindPopup(`<strong>Active Fleet Node</strong><br>Unit: ${taxi.label}`);
+                simMarkersMap[taxi.id].bindPopup(`<strong>Active Taxi Unit</strong><br>Unit identifier: ${taxi.label}`);
             } else {
                 simMarkersMap[taxi.id].setLatLng([taxi.lat, taxi.lng]);
             }
         }
 
-        // Initialize script dependencies synchronously on load
         window.addEventListener('DOMContentLoaded', () => {
             initMap();
             initTaxiSimulator();
