@@ -1,13 +1,3 @@
-To implement this "Live History Logs" chat box feature while keeping your current code, styles, and map markers **exactly** the same, we need to create a storage tracking system.
-Because this app currently runs entirely on the driver's phone browser, we will create a live memory array (activeMarkersLog) that automatically remembers the precise GPS coordinates, address string, and exact timestamp whenever a driver drops a Flag, Caution, or Police marker.
-To make this clean and highly scannable on a phone screen, we will add a **CHAT** utility button to the **right side panel** (directly underneath the Map Lock button). Clicking it opens a solid white modal with three tab selections: **FLAGS**, **CAUTION**, and **POLICE**.
-Here is how the history filters work dynamically:
- * **Flags Tab:** Dynamically displays logs from the last **30 minutes**.
- * **Caution Tab:** Dynamically displays logs from the last **30 minutes**.
- * **Police Tab:** Dynamically displays logs from the last **2 hours**.
-When a driver taps any logged item in the list, the menu automatically hides, and the map instantly flies to and centers directly on the exact coordinates where that marker was dropped!
-Here is your fully updated, verified code block ready to use:
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,13 +101,19 @@ Here is your fully updated, verified code block ready to use:
         .btn-submit-sugg { background: #007aff; color: white; border: none; width: 100%; padding: 14px; border-radius: 8px; font-weight: 900; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; margin-bottom: 10px; }
         .btn-cancel-sugg { background: #e5e5ea; color: #1c1c1e; border: none; width: 100%; padding: 10px; border-radius: 8px; font-weight: 900; font-size: 0.95rem; cursor: pointer; text-transform: uppercase; }
 
-        /* CHAT LOG HISTORY WINDOW STYLES */
+        /* CHAT LOG HISTORY WINDOW STYLES - FIXED TO MAINTAIN SOLID ALL-THE-TIME SYSTEM THEME COLORS */
         .chat-log-grid { width: 360px; max-height: 80vh; display: flex; flex-direction: column; padding: 16px; }
         .chat-tab-bar { display: flex; gap: 6px; margin-bottom: 12px; }
-        .chat-tab-btn { flex: 1; padding: 12px 4px; font-weight: 900; font-size: 0.85rem; border: 2px solid #1c1c1e; border-radius: 8px; cursor: pointer; text-transform: uppercase; text-align: center; background: #e5e5ea; color: #1c1c1e; }
-        .chat-tab-btn.active-tab-flags { background: #ff3b30 !important; color: white !important; border-color: #ff3b30; }
-        .chat-tab-btn.active-tab-caution { background: #ffcc00 !important; color: black !important; border-color: black; }
-        .chat-tab-btn.active-tab-police { background: #007aff !important; color: white !important; border-color: #007aff; }
+        .chat-tab-btn { flex: 1; padding: 12px 4px; font-weight: 900; font-size: 0.85rem; border-radius: 8px; cursor: pointer; text-transform: uppercase; text-align: center; border: 2px solid transparent; }
+        
+        #tab-btn-flag { background: #ff3b30 !important; color: white !important; opacity: 0.6; }
+        #tab-btn-caution { background: #ffcc00 !important; color: black !important; opacity: 0.6; }
+        #tab-btn-police { background: #007aff !important; color: white !important; opacity: 0.6; }
+        
+        #tab-btn-flag.active-tab-flags { border-color: #1c1c1e !important; box-shadow: inset 0 0 0 2px #fff; opacity: 1.0; }
+        #tab-btn-caution.active-tab-caution { border-color: #1c1c1e !important; box-shadow: inset 0 0 0 2px #000; opacity: 1.0; }
+        #tab-btn-police.active-tab-police { border-color: #1c1c1e !important; box-shadow: inset 0 0 0 2px #fff; opacity: 1.0; }
+        
         .chat-list-container { flex: 1; overflow-y: auto; min-height: 200px; max-height: 45vh; border: 2px solid #e5e5ea; border-radius: 8px; padding: 6px; background: #f2f2f7; }
         .chat-log-item { background: #ffffff; border: 2px solid #d1d1d6; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; font-size: 0.95rem; line-height: 1.4; color: #1c1c1e; font-weight: 700; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .chat-log-item:active { background: #e5e5ea; }
@@ -417,8 +413,7 @@ Here is your fully updated, verified code block ready to use:
 
                 const flagMarker = L.marker(targetPos, { icon: redManIcon }).addTo(map);
                 const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName;
-                const navigationUrl = `https://www.google.com/maps/search/?api=1&query=${targetPos.lat},${targetPos.lng}`;
-
+                
                 let headerLabel = `<strong style="color:#ff3b30;">FLAG WAITING</strong>`;
                 let displayString = `Passenger Flag Waiting (${selectionValue}) at ${completeAddress}`;
                 if (selectionValue === 'Hotel Driveway') {
@@ -431,9 +426,12 @@ Here is your fully updated, verified code block ready to use:
                     category: 'Flag',
                     timestamp: Date.now(),
                     latlng: targetPos,
-                    textString: displayString
+                    textString: displayString,
+                    emojiIcon: selectionValue === 'Hotel Driveway' ? '🏨' : '🚶',
+                    subType: selectionValue
                 });
 
+                const navigationUrl = `https://www.google.com/maps/search/?api=1&query=${targetPos.lat},${targetPos.lng}`;
                 flagMarker.bindPopup(`
                     ${headerLabel}<br>
                     <strong>Placement:</strong> ${selectionValue}<br>
@@ -511,7 +509,13 @@ Here is your fully updated, verified code block ready to use:
                     category: 'Caution',
                     timestamp: Date.now(),
                     latlng: targetPos,
-                    textString: `Caution Conditions: ${typeLabel} ahead (${directionLabel}) at ${completeAddress}`
+                    textString: `Caution Conditions: ${typeLabel} ahead (${directionLabel}) at ${completeAddress}`,
+                    emojiIcon: cautionIconHtml,
+                    cssClass: classLabel,
+                    size: customSize,
+                    anchor: anchorOffsets,
+                    subType: typeLabel,
+                    dir: directionLabel
                 });
 
                 dynamicMarker.bindPopup(`
@@ -563,7 +567,10 @@ Here is your fully updated, verified code block ready to use:
                     category: 'Police',
                     timestamp: Date.now(),
                     latlng: targetPos,
-                    textString: `Police reported ahead ${directionLabel.toLowerCase()} at ${completeAddress} - Type: ${typeLabel.toUpperCase()}`
+                    textString: `Police reported ahead ${directionLabel.toLowerCase()} at ${completeAddress} - Type: ${typeLabel.toUpperCase()}`,
+                    emojiIcon: '👮',
+                    subType: typeLabel,
+                    dir: directionLabel
                 });
 
                 officerMarker.bindPopup(`
@@ -707,7 +714,7 @@ Here is your fully updated, verified code block ready to use:
         function switchChatLogTab(categoryTab) {
             activeChatLogTab = categoryTab;
             
-            // Manage UI Active class assignments cleanly
+            // Clean interface border framing assignments
             document.getElementById('tab-btn-flag').className = "chat-tab-btn" + (categoryTab === 'Flag' ? " active-tab-flags" : "");
             document.getElementById('tab-btn-caution').className = "chat-tab-btn" + (categoryTab === 'Caution' ? " active-tab-caution" : "");
             document.getElementById('tab-btn-police').className = "chat-tab-btn" + (categoryTab === 'Police' ? " active-tab-police" : "");
@@ -720,15 +727,12 @@ Here is your fully updated, verified code block ready to use:
             container.innerHTML = "";
             
             const now = Date.now();
-            // Set dynamic limits: 30 mins for Flag/Caution, 2 hours (120 mins) for Police
             const timeLimitMs = (activeChatLogTab === 'Police') ? (120 * 60 * 1000) : (30 * 60 * 1000);
             
-            // Filter logs based on classification category type & precise active lifetime intervals
             const filteredItems = activeMarkersLog.filter(item => {
                 return item.category === activeChatLogTab && (now - item.timestamp <= timeLimitMs);
             });
             
-            // Reverse chronological sorting order assertion
             filteredItems.sort((a, b) => b.timestamp - a.timestamp);
             
             if (filteredItems.length === 0) {
@@ -741,17 +745,69 @@ Here is your fully updated, verified code block ready to use:
                 const logCard = document.createElement('div');
                 logCard.className = "chat-log-item";
                 
-                // Add click handler to instantly fly map over coordinate values
+                // Add click handler to instantly fly map over coordinate values and drop an icon for 30s
                 logCard.onclick = function() {
                     hideModals();
                     trackVehicleView = false;
                     
-                    // Toggle central layout indicator into free map navigation context
                     const centerBtn = document.getElementById('lock-center-btn');
                     centerBtn.className = "util-circle";
                     centerBtn.innerHTML = "MAP<br>FREE";
                     
                     map.setView(item.latlng, 17);
+                    
+                    // Create temporary historical icon placement rule
+                    let customHistoryIcon;
+                    let popupContentHtml = "";
+                    const targetNavUrl = `https://www.google.com/maps/search/?api=1&query=${item.latlng.lat},${item.latlng.lng}`;
+                    
+                    if (item.category === 'Flag') {
+                        customHistoryIcon = L.divIcon({
+                            className: 'red-man-icon',
+                            html: item.emojiIcon || '🚶',
+                            iconSize: [34, 34],
+                            iconAnchor: [17, 32]
+                        });
+                        popupContentHtml = `
+                            <strong style="color:#ff3b30;">HISTORICAL LOGGED FLAG</strong><br>
+                            <span>${item.textString}</span><br><br>
+                            <a href="${targetNavUrl}" target="_blank" style="display:block; text-align:center; background:#007aff; color:white; font-weight:bold; padding:8px 10px; border-radius:6px; text-decoration:none; margin-top:5px; text-transform:uppercase; font-size:11px;">Navigate to Flag</a>
+                        `;
+                    } 
+                    else if (item.category === 'Caution') {
+                        customHistoryIcon = L.divIcon({
+                            className: item.cssClass || 'caution-closure-icon',
+                            html: item.emojiIcon || '🚧',
+                            iconSize: item.size || [34, 34],
+                            iconAnchor: item.anchor || [17, 17]
+                        });
+                        popupContentHtml = `
+                            <strong style="color:#b38f00;">HISTORICAL CAUTION REPORT</strong><br>
+                            <span>${item.textString}</span><br><br>
+                            <a href="${targetNavUrl}" target="_blank" style="display:block; text-align:center; background:#007aff; color:white; font-weight:bold; padding:8px 10px; border-radius:6px; text-decoration:none; margin-top:5px; text-transform:uppercase; font-size:11px;">Navigate to Location</a>
+                        `;
+                    } 
+                    else if (item.category === 'Police') {
+                        customHistoryIcon = L.divIcon({
+                            className: 'police-officer-icon',
+                            html: '👮',
+                            iconSize: [36, 36],
+                            iconAnchor: [18, 18]
+                        });
+                        popupContentHtml = `
+                            <strong style="color:#007aff;">HISTORICAL POLICE LOG</strong><br>
+                            <span>${item.textString}</span><br><br>
+                            <a href="${targetNavUrl}" target="_blank" style="display:block; text-align:center; background:#007aff; color:white; font-weight:bold; padding:8px 10px; border-radius:6px; text-decoration:none; margin-top:5px; text-transform:uppercase; font-size:11px;">Navigate to Location</a>
+                        `;
+                    }
+                    
+                    const temporaryHistoryMarker = L.marker(item.latlng, { icon: customHistoryIcon }).addTo(map);
+                    temporaryHistoryMarker.bindPopup(popupContentHtml).openPopup();
+                    
+                    // Clean up and drop the historical marker completely after exactly 30 seconds
+                    setTimeout(() => {
+                        map.removeLayer(temporaryHistoryMarker);
+                    }, 30000);
                 };
                 
                 logCard.innerHTML = `
@@ -786,5 +842,3 @@ Here is your fully updated, verified code block ready to use:
     </script>
 </body>
 </html>
-
-```
