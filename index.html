@@ -198,7 +198,7 @@
             touchZoom: true,
             doubleClickZoom: true,
             scrollWheelZoom: true
-        }).setView([49.2611, -123.1281], 11); // Set slightly further out to monitor all three cities
+        }).setView([49.2611, -123.1281], 11); 
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); 
 
@@ -329,7 +329,7 @@
 
 
         // =========================================================================================
-        // DISPATCH PASSENGER FLAG MARKER (FIXED: SEPARATED USER DROPS FROM ENGINE SIMULATIONS)
+        // DISPATCH PASSENGER FLAG MARKER (FIXED)
         // =========================================================================================
         function dropFlagDirect(selectionValue) {
             hideModals(); 
@@ -365,7 +365,7 @@
             });
         } 
 
-        // NEW SUITE: Isolated injection engine specifically for background simulator items
+        // FIXED INTERFACE: Simulation background engine drops
         function injectSimulatedFlag(type, latlng, cabLabel) {
             const redManIcon = L.divIcon({
                 className: 'red-man-icon',
@@ -432,7 +432,7 @@
             });
         } 
 
-        // Simulation script bypass layout for Caution alerts
+        // FIXED INTERFACE: Simulation background engine caution drops
         function injectSimulatedCaution(type, direction, latlng, cabLabel) {
             let iconHtml = "🚧";
             let classLbl = "caution-closure-icon";
@@ -488,7 +488,7 @@
             });
         } 
 
-        // Simulation script bypass layout for Police tracking alerts
+        // FIXED INTERFACE: Simulation background engine police drops
         function injectSimulatedPolice(type, direction, latlng, cabLabel) {
             const policeIcon = L.divIcon({ className: 'police-officer-icon', html: '👮', iconSize: [36, 36], iconAnchor: [18, 18] });
             const marker = L.marker([latlng.lat, latlng.lng], { icon: policeIcon }).addTo(map);
@@ -576,7 +576,7 @@
 
 
         // =========================================================================================
-        // 🚀 SIMULATOR ENGINE (FIXED: FAST BYPASS WITH MULTI-ALERT CAPABILITIES)
+        // SIMULATOR ENGINE 
         // =========================================================================================
         let simulatedTaxis = [];
         let simMarkersMap = {};
@@ -612,44 +612,46 @@
                     const simIcon = L.divIcon({ className: 'taxi-vector-icon', html: markerHtml, iconSize: [36, 24], iconAnchor: [18, 12] });
 
                     if (!simMarkersMap[taxi.id]) {
-                        simMarkersMap[taxi.id] = L.marker([taxi.lat, taxi.lng], { icon: simIcon }).addTo(map);
+                        simMarkersMap[taxi.id] = L.marker([taxi.lat, taxi.taxi || taxi.lng], { icon: simIcon }).addTo(map);
                     } else {
                         simMarkersMap[taxi.id].setLatLng([taxi.lat, taxi.lng]);
                     }
                 });
             }, 3000);
 
-            // Loop 2: Safe automated grid drops (Completely bypasses Nominatim Rate Limits!)
+            // Loop 2: Safe automated grid drops (Fires every 6 seconds)
             setInterval(() => {
                 if (simulatedTaxis.length === 0) return;
 
                 const randomCab = simulatedTaxis[Math.floor(Math.random() * simulatedTaxis.length)];
                 const cabPos = { lat: randomCab.lat, lng: randomCab.lng };
 
-                // Randomly decide which type of warning payload to scatter on the UI map
                 const eventRoulette = Math.random();
                 const directions = ['Northbound', 'Southbound', 'Eastbound', 'Westbound', 'All Directions'];
                 const randDir = directions[Math.floor(Math.random() * directions.length)];
 
-                if (eventRoulette < 0.50) {
-                    // 50% chance: Drop a Passenger Flag
-                    const flagTypes = ['Northbound', 'Southbound', 'Northeast Corner', 'Hotel Driveway'];
-                    const randType = flagTypes[Math.floor(Math.random() * flagTypes.length)];
-                    injectSimulatedFlag(randType, cabPos, randomCab.label);
-                } 
-                else if (eventRoulette < 0.80) {
-                    // 30% chance: Drop a Traffic/Accident Caution
-                    const cautionTypes = ['Mild traffic', 'Heavy traffic', 'Accident', 'Road closure'];
-                    const randCaution = cautionTypes[Math.floor(Math.random() * cautionTypes.length)];
-                    injectSimulatedCaution(randCaution, randDir, cabPos, randomCab.label);
-                } 
-                else {
-                    // 20% chance: Drop a Police Threat Zone
-                    const policeTypes = ['radar', 'emergency', 'hidden'];
-                    const randPolice = policeTypes[Math.floor(Math.random() * policeTypes.length)];
-                    injectSimulatedPolice(randPolice, randDir, cabPos, randomCab.label);
+                // Wrapped inside a try/catch block so a glitch can never freeze the thread
+                try {
+                    if (eventRoulette < 0.50) {
+                        const flagTypes = ['Northbound', 'Southbound', 'Northeast Corner', 'Hotel Driveway'];
+                        const randType = flagTypes[Math.floor(Math.random() * flagTypes.length)];
+                        injectSimulatedFlag(randType, cabPos, randomCab.label);
+                    } 
+                    else if (eventRoulette < 0.80) {
+                        const cautionTypes = ['Mild traffic', 'Heavy traffic', 'Accident', 'Road closure'];
+                        const randCaution = cautionTypes[Math.floor(Math.random() * cautionTypes.length)];
+                        injectSimulatedCaution(randCaution, randDir, cabPos, randomCab.label);
+                    } 
+                    else {
+                        const policeTypes = ['radar', 'emergency', 'hidden'];
+                        const randPolice = policeTypes[Math.floor(Math.random() * policeTypes.length)];
+                        injectSimulatedPolice(randPolice, randDir, cabPos, randomCab.label);
+                    }
+                    console.log(`[SIMULATOR] Event placed successfully by ${randomCab.label}`);
+                } catch (err) {
+                    console.log("Sim drop bypassed: " + err.message);
                 }
-            }, 6000); // Fires every 6 seconds to generate a highly active testing map layout!
+            }, 6000); 
         }
 
 
