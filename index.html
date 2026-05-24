@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yellow Cab Companion Pro V9 - Simulator Edition</title>
+    <title>Yellow Cab Companion Pro V9</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
@@ -13,7 +13,7 @@
         
         /* Top HUD Action Buttons Grid (4 Circular Controls) */
         .top-actions { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 1000; width: 95%; justify-content: center; }
-        .action-btn { width: 82px; height: 82px; border-radius: 50%; border: 4px solid #fff; color: white; font-weight: bold; font-size: 0.82rem; cursor: pointer; box-shadow: 0 6px 12px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .action-btn { width: 82 height: 82px; border-radius: 50%; border: 4px solid #fff; color: white; font-weight: bold; font-size: 0.82rem; cursor: pointer; box-shadow: 0 6px 12px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         .btn-flag { background: #ff3b30; }
         .btn-caution { background: #ffcc00; color: #000; border-color: #000; }
         .btn-police { background: #007aff; }
@@ -401,7 +401,7 @@
             hideModals(); 
             if (!vehiclePos) return; 
 
-            const targetPos = vehiclePos; 
+            const targetPos = L.latLng(vehiclePos.lat, vehiclePos.lng); 
 
             fetchAddressFromCoordinates(targetPos, function() {
                 const redManIcon = L.divIcon({
@@ -461,7 +461,7 @@
             hideModals(); 
             if (!vehiclePos) return; 
 
-            const targetPos = vehiclePos;
+            const targetPos = L.latLng(vehiclePos.lat, vehiclePos.lng);
             const typeLabel = chosenCautionType;
             const directionLabel = directionValue; 
 
@@ -471,7 +471,6 @@
                 let anchorOffsets = [15, 15];
                 let customSize = [30, 30];
 
-                // Check condition types and assign specific emoji symbols and sizes
                 if (typeLabel === 'Mild traffic') {
                     cautionIconHtml = "🚘🚘";
                     classLabel = "caution-traffic-icon";
@@ -526,7 +525,6 @@
 
                 dispatchAudioNarration('Caution', { type: typeLabel, direction: directionLabel });
 
-                // Keep map clear by auto-removing the marker after 20 minutes
                 setTimeout(() => {
                     map.removeLayer(dynamicMarker);
                 }, 1200000);
@@ -547,7 +545,7 @@
             hideModals(); 
             if (!vehiclePos) return; 
 
-            const targetPos = vehiclePos;
+            const targetPos = L.latLng(vehiclePos.lat, vehiclePos.lng);
             const typeLabel = chosenPoliceType; 
             const directionLabel = directionValue; 
 
@@ -714,7 +712,6 @@
         function switchChatLogTab(categoryTab) {
             activeChatLogTab = categoryTab;
             
-            // Clean interface border framing assignments
             document.getElementById('tab-btn-flag').className = "chat-tab-btn" + (categoryTab === 'Flag' ? " active-tab-flags" : "");
             document.getElementById('tab-btn-caution').className = "chat-tab-btn" + (categoryTab === 'Caution' ? " active-tab-caution" : "");
             document.getElementById('tab-btn-police').className = "chat-tab-btn" + (categoryTab === 'Police' ? " active-tab-police" : "");
@@ -745,7 +742,6 @@
                 const logCard = document.createElement('div');
                 logCard.className = "chat-log-item";
                 
-                // Add click handler to instantly fly map over coordinate values and drop an icon for 30s
                 logCard.onclick = function() {
                     hideModals();
                     trackVehicleView = false;
@@ -756,12 +752,11 @@
                     
                     map.setView(item.latlng, 17);
                     
-                    // Create temporary historical icon placement rule
                     let customHistoryIcon;
                     let popupContentHtml = "";
-                    const targetNavUrl = `https://www.google.com/maps/search/?api=1&query=${item.latlng.lat},${item.latlng.lng}`;
                     
                     if (item.category === 'Flag') {
+                        const targetNavUrl = `https://www.google.com/maps/search/?api=1&query=${item.latlng.lat},${item.latlng.lng}`;
                         customHistoryIcon = L.divIcon({
                             className: 'red-man-icon',
                             html: item.emojiIcon || '🚶',
@@ -783,8 +778,7 @@
                         });
                         popupContentHtml = `
                             <strong style="color:#b38f00;">HISTORICAL CAUTION REPORT</strong><br>
-                            <span>${item.textString}</span><br><br>
-                            <a href="${targetNavUrl}" target="_blank" style="display:block; text-align:center; background:#007aff; color:white; font-weight:bold; padding:8px 10px; border-radius:6px; text-decoration:none; margin-top:5px; text-transform:uppercase; font-size:11px;">Navigate to Location</a>
+                            <span>${item.textString}</span>
                         `;
                     } 
                     else if (item.category === 'Police') {
@@ -796,15 +790,13 @@
                         });
                         popupContentHtml = `
                             <strong style="color:#007aff;">HISTORICAL POLICE LOG</strong><br>
-                            <span>${item.textString}</span><br><br>
-                            <a href="${targetNavUrl}" target="_blank" style="display:block; text-align:center; background:#007aff; color:white; font-weight:bold; padding:8px 10px; border-radius:6px; text-decoration:none; margin-top:5px; text-transform:uppercase; font-size:11px;">Navigate to Location</a>
+                            <span>${item.textString}</span>
                         `;
                     }
                     
                     const temporaryHistoryMarker = L.marker(item.latlng, { icon: customHistoryIcon }).addTo(map);
                     temporaryHistoryMarker.bindPopup(popupContentHtml).openPopup();
                     
-                    // Clean up and drop the historical marker completely after exactly 30 seconds
                     setTimeout(() => {
                         map.removeLayer(temporaryHistoryMarker);
                     }, 30000);
@@ -839,215 +831,6 @@
                 maintainScreenWakeLock();
             }
         });
-
-        // =========================================================================================
-        // AUTONOMOUS TRAFFIC SIMULATOR ENGINE (8 ACTIVE CARS PRODUCING SIMULATED REPORTS)
-        // =========================================================================================
-        const simulatedTaxis = [
-            { id: "Car 102", pos: [49.2827, -123.1207], heading: [0.0003, -0.0002] }, // Downtown Core
-            { id: "Car 144", pos: [49.2855, -123.1362], heading: [-0.0002, 0.0004] }, // West End
-            { id: "Car 209", pos: [49.2643, -123.1156], heading: [0.0004, 0.0001] }, // Mount Pleasant
-            { id: "Car 251", pos: [49.2684, -123.1502], heading: [-0.0001, -0.0004] }, // Kitsilano
-            { id: "Car 312", pos: [49.2796, -123.1025], heading: [0.0002, -0.0003] }, // Chinatown / Gastown
-            { id: "Car 360", pos: [49.2525, -123.1011], heading: [0.0003, 0.0003] }, // Main St Corridor
-            { id: "Car 404", pos: [49.2628, -123.0694], heading: [-0.0004, 0.0002] }, // Commercial Drive
-            { id: "Car 418", pos: [49.2731, -123.1238], heading: [0.0001, -0.0004] }  // Yaletown
-        ];
-
-        const simCabsMarkersList = [];
-
-        // Spawn simulated cars onto the live map instantly
-        simulatedTaxis.forEach(cab => {
-            const marker = L.marker(cab.pos, { icon: taxiIconStyle }).addTo(map);
-            marker.bindTooltip(`Cab ${cab.id.split(' ')[1]} (Sim)`, { permanent: false, direction: 'top' });
-            simCabsMarkersList.push({ id: cab.id, markerInstance: marker, dataRef: cab });
-        });
-
-        // Loop to make simulated cars drive along the roads dynamically
-        setInterval(() => {
-            simCabsMarkersList.forEach(simulatedObject => {
-                const cabRef = simulatedObject.dataRef;
-                
-                // Advance position coordinates along pathing vectors
-                cabRef.pos[0] += cabRef.heading[0];
-                cabRef.pos[1] += cabRef.heading[1];
-                
-                // Boundary bounces to keep simulation tight in the city limits
-                if (cabRef.pos[0] > 49.295 || cabRef.pos[0] < 49.245) cabRef.heading[0] *= -1;
-                if (cabRef.pos[1] > -123.05 || cabRef.pos[1] < -123.16) cabRef.heading[1] *= -1;
-                
-                simulatedObject.markerInstance.setLatLng(cabRef.pos);
-            });
-        }, 3000);
-
-        // Simulated reporting dispatch module (Triggers action events randomly every 15-30 seconds)
-        function processSimulatedDriverActionDrop() {
-            if (simCabsMarkersList.length === 0) return;
-            
-            const randomCabObj = simCabsMarkersList[Math.floor(Math.random() * simCabsMarkersList.length)].dataRef;
-            const eventTargetLatLng = L.latLng(randomCabObj.pos[0], randomCabObj.pos[1]);
-            
-            const categories = ['Flag', 'Caution', 'Police'];
-            const chosenCategory = categories[Math.floor(Math.random() * categories.length)];
-            
-            const flagOptions = ['Northbound', 'Southbound', 'Eastbound', 'Westbound', 'Northeast Corner', 'Hotel Driveway'];
-            const cautionOptions = ['Mild traffic', 'Heavy traffic', 'Accident', 'Road closure'];
-            const policeOptions = ['radar', 'emergency', 'hidden'];
-            const directions = ['Northbound', 'Southbound', 'Eastbound', 'Westbound', 'All Directions'];
-
-            const randomDirection = directions[Math.floor(Math.random() * directions.length)];
-            
-            // Execute automated Nominatim reverse geocode lookup to get a valid address string
-            const lookupUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${eventTargetLatLng.lat}&lon=${eventTargetLatLng.lng}&zoom=18&addressdetails=1`;
-            
-            fetch(lookupUrl, { headers: { 'Accept-Language': 'en' } })
-                .then(res => res.json())
-                .then(data => {
-                    let st = "Street Route";
-                    let hs = "";
-                    if (data && data.address) {
-                        st = data.address.road || data.address.pedestrian || data.address.suburb || "Street Route";
-                        hs = data.address.house_number || "";
-                    }
-                    const compiledAddressString = hs ? `${hs} ${st}` : st;
-                    
-                    if (chosenCategory === 'Flag') {
-                        const selectionValue = flagOptions[Math.floor(Math.random() * flagOptions.length)];
-                        const redManIcon = L.divIcon({
-                            className: 'red-man-icon',
-                            html: selectionValue === 'Hotel Driveway' ? '🏨' : '🚶',
-                            iconSize: [34, 34],
-                            iconAnchor: [17, 32]
-                        });
-                        
-                        const flagMarker = L.marker(eventTargetLatLng, { icon: redManIcon }).addTo(map);
-                        let labelHead = `<strong style="color:#ff3b30;">FLAG WAITING</strong>`;
-                        let logText = `Passenger Flag Waiting (${selectionValue}) at ${compiledAddressString} (via ${randomCabObj.id})`;
-                        if (selectionValue === 'Hotel Driveway') {
-                            labelHead = `<strong style="color:#5856d6;">HOTEL DISPATCH FLAG</strong>`;
-                            logText = `Hotel Dispatch Flag waiting at ${compiledAddressString} (via ${randomCabObj.id})`;
-                        }
-                        
-                        activeMarkersLog.push({
-                            category: 'Flag',
-                            timestamp: Date.now(),
-                            latlng: eventTargetLatLng,
-                            textString: logText,
-                            emojiIcon: selectionValue === 'Hotel Driveway' ? '🏨' : '🚶',
-                            subType: selectionValue
-                        });
-                        
-                        const navUrl = `https://www.google.com/maps/search/?api=1&query=${eventTargetLatLng.lat},${eventTargetLatLng.lng}`;
-                        flagMarker.bindPopup(`
-                            ${labelHead}<br>
-                            <strong>Placement:</strong> ${selectionValue}<br>
-                            <span>Location: ${compiledAddressString}</span><br>
-                            <small style="color:gray;">Reported by ${randomCabObj.id}</small><br><br>
-                            <a href="${navUrl}" target="_blank" style="display:block; text-align:center; background:#007aff; color:white; font-weight:bold; padding:8px 10px; border-radius:6px; text-decoration:none; margin-top:5px; text-transform:uppercase; font-size:11px;">Navigate to Flag</a>
-                        `);
-                        
-                        // Speak out the alert if audio is on
-                        const simulatedHouseConvert = breakHouseNumbersIntoCouples(hs);
-                        const speechAddr = simulatedHouseConvert ? `${simulatedHouseConvert} ${st}` : st;
-                        lastSpokenSpeechString = selectionValue === 'Hotel Driveway' ? `One flag waiting inside the driveway of the hotel at ${speechAddr}` : `One flag waiting ${selectionValue.toLowerCase()} at ${speechAddr}`;
-                        if (!audioMuted) {
-                            const u = new SpeechSynthesisUtterance(lastSpokenSpeechString);
-                            window.speechSynthesis.speak(u);
-                        }
-                        
-                        setTimeout(() => map.removeLayer(flagMarker), 300000);
-                    } 
-                    else if (chosenCategory === 'Caution') {
-                        const typeLabel = cautionOptions[Math.floor(Math.random() * cautionOptions.length)];
-                        let cautionIconHtml = "🚧"; let classLabel = "caution-closure-icon"; let customSize = [34, 34]; let anchorOffsets = [17, 17];
-                        
-                        if (typeLabel === 'Mild traffic') { cautionIconHtml = "🚘🚘"; classLabel = "caution-traffic-icon"; customSize = [50, 26]; anchorOffsets = [25, 13]; }
-                        else if (typeLabel === 'Heavy traffic') { cautionIconHtml = "🚘🚘🚘🚘"; classLabel = "caution-traffic-icon"; customSize = [90, 26]; anchorOffsets = [45, 13]; }
-                        else if (typeLabel === 'Accident') { cautionIconHtml = "💥🚗"; classLabel = "caution-accident-icon"; customSize = [44, 34]; anchorOffsets = [22, 17]; }
-                        
-                        const cautionDivIcon = L.divIcon({ className: classLabel, html: cautionIconHtml, iconSize: customSize, iconAnchor: anchorOffsets });
-                        const dynamicMarker = L.marker(eventTargetLatLng, { icon: cautionDivIcon }).addTo(map);
-                        
-                        activeMarkersLog.push({
-                            category: 'Caution',
-                            timestamp: Date.now(),
-                            latlng: eventTargetLatLng,
-                            textString: `Caution Conditions: ${typeLabel} ahead (${randomDirection}) at ${compiledAddressString} (via ${randomCabObj.id})`,
-                            emojiIcon: cautionIconHtml,
-                            cssClass: classLabel,
-                            size: customSize,
-                            anchor: anchorOffsets,
-                            subType: typeLabel,
-                            dir: randomDirection
-                        });
-                        
-                        dynamicMarker.bindPopup(`
-                            <strong style="color:#b38f00;">${typeLabel.toUpperCase()}</strong><br>
-                            <strong>Direction:</strong> ${randomDirection}<br>
-                            <span>Location: ${compiledAddressString}</span><br>
-                            <small style="color:gray;">Reported by ${randomCabObj.id}</small>
-                        `);
-                        
-                        const simulatedHouseConvert = breakHouseNumbersIntoCouples(hs);
-                        const speechAddr = simulatedHouseConvert ? `${simulatedHouseConvert} ${st}` : st;
-                        lastSpokenSpeechString = `One ${typeLabel.toLowerCase()} reported ahead ${randomDirection.toLowerCase()} at ${speechAddr}`;
-                        if (!audioMuted) {
-                            const u = new SpeechSynthesisUtterance(lastSpokenSpeechString);
-                            window.speechSynthesis.speak(u);
-                        }
-                        
-                        setTimeout(() => map.removeLayer(dynamicMarker), 1200000);
-                    } 
-                    else if (chosenCategory === 'Police') {
-                        const typeLabel = policeOptions[Math.floor(Math.random() * policeOptions.length)];
-                        const policeIcon = L.divIcon({ className: 'police-officer-icon', html: '👮', iconSize: [36, 36], iconAnchor: [18, 18] });
-                        const officerMarker = L.marker(eventTargetLatLng, { icon: policeIcon }).addTo(map);
-                        
-                        activeMarkersLog.push({
-                            category: 'Police',
-                            timestamp: Date.now(),
-                            latlng: eventTargetLatLng,
-                            textString: `Police reported ahead ${randomDirection.toLowerCase()} at ${compiledAddressString} - Type: ${typeLabel.toUpperCase()} (via ${randomCabObj.id})`,
-                            emojiIcon: '👮',
-                            subType: typeLabel,
-                            dir: randomDirection
-                        });
-                        
-                        officerMarker.bindPopup(`
-                            <strong style="color:#007aff;">POLICE ENFORCEMENT</strong><br>
-                            <strong>Type:</strong> ${typeLabel.toUpperCase()} (${randomDirection})<br>
-                            <span>Location: ${compiledAddressString}</span><br>
-                            <small style="color:gray;">Reported by ${randomCabObj.id}</small>
-                        `);
-                        
-                        const simulatedHouseConvert = breakHouseNumbersIntoCouples(hs);
-                        const speechAddr = simulatedHouseConvert ? `${simulatedHouseConvert} ${st}` : st;
-                        const speechDirection = randomDirection.toLowerCase();
-                        if (typeLabel === 'emergency') lastSpokenSpeechString = `One police reported ahead ${speechDirection} at ${speechAddr} emergency`;
-                        else if (typeLabel === 'hidden') lastSpokenSpeechString = `One police reported ahead ${speechDirection} at ${speechAddr} they are hiding they are hiding`;
-                        else lastSpokenSpeechString = `One police reported ahead ${speechDirection} at ${speechAddr} Radar Radar`;
-                        
-                        if (!audioMuted) {
-                            const u = new SpeechSynthesisUtterance(lastSpokenSpeechString);
-                            window.speechSynthesis.speak(u);
-                        }
-                        
-                        setTimeout(() => map.removeLayer(officerMarker), 1800000);
-                    }
-                    
-                    // If the logs window is currently open, dynamically update it in real-time
-                    if (document.getElementById('chat-log-pop').style.display === 'block') {
-                        renderChatLogList();
-                    }
-                })
-                .catch(err => console.log("Simulation geo skip: " + err.message));
-
-            // Queue up the next dynamic reporting instance interval loop safely
-            setTimeout(processSimulatedDriverActionDrop, Math.floor(Math.random() * 15000) + 15000);
-        }
-
-        // Delay launch of simulation reporting engine by 5 seconds so everything initializes smoothly
-        setTimeout(processSimulatedDriverActionDrop, 5000);
     </script>
 </body>
 </html>
