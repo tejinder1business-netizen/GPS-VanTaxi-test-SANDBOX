@@ -30,6 +30,9 @@
         
         /* Repeat Audio Button Style */
         .util-circle.active-repeat { background: #5856d6; color: white; border-color: white; }
+        
+        /* Suggestion Button Style */
+        .util-circle.btn-suggestion { background: #e5e5ea; color: #1c1c1e; border: 3px solid #1c1c1e; }
 
         /* Custom Pure CSS Taxi Moving Element */
         .taxi-vector-icon { background: #ffd100; border: 2px solid #000; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.4); text-align: center; font-weight: bold; font-size: 10px; line-height: 24px; color: black; }
@@ -87,6 +90,13 @@
             justify-content: space-between; 
         }
         .btn-close-cam { background: #1c1c1e; color: white; width: 100%; margin-top: 12px; padding: 12px; border-radius: 8px; font-weight: 900; font-size: 1rem; border: none; cursor: pointer; text-transform: uppercase; } 
+
+        /* SUGGESTION BOX WINDOW STYLES */
+        .suggestion-grid { width: 320px; }
+        .suggestion-input { width: 100%; height: 120px; padding: 12px; border-radius: 8px; border: 2px solid #a2a2a6; font-size: 1rem; resize: none; margin-bottom: 14px; font-family: inherit; }
+        .suggestion-input:focus { border-color: #007aff; outline: none; }
+        .btn-submit-sugg { background: #007aff; color: white; border: none; width: 100%; padding: 14px; border-radius: 8px; font-weight: 900; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; margin-bottom: 10px; }
+        .btn-cancel-sugg { background: #e5e5ea; color: #1c1c1e; border: none; width: 100%; padding: 10px; border-radius: 8px; font-weight: 900; font-size: 0.95rem; cursor: pointer; text-transform: uppercase; }
     </style>
 </head>
 <body> 
@@ -103,12 +113,20 @@
     <div class="side-util left-side">
         <button id="mute-toggle-btn" class="util-circle" onclick="handleMuteToggle()">AUDIO<br>ON</button>
         <button id="audio-repeat-btn" class="util-circle active-repeat" onclick="replayLastAudioNarration()">REPLAY<br>MSG</button>
+        <button id="suggestion-trigger-btn" class="util-circle btn-suggestion" onclick="showModal('suggestion-pop')">FEED<br>BACK</button>
     </div>
     <div class="side-util right-side">
         <button id="lock-center-btn" class="util-circle active-center" onclick="handleRecenter()">MAP<br>LOCKED</button>
     </div> 
 
     <div id="screen-overlay" class="modal-overlay" onclick="hideModals()"></div> 
+
+    <div id="suggestion-pop" class="driver-modal suggestion-grid">
+        <span class="modal-title">Driver Suggestion</span>
+        <textarea id="driver-suggestion-text" class="suggestion-input" placeholder="Type your request, route issue, or feature idea here..."></textarea>
+        <button class="btn-submit-sugg" onclick="submitDriverSuggestion()">Submit Idea</button>
+        <button class="btn-cancel-sugg" onclick="hideModals()">Cancel</button>
+    </div>
 
     <div id="camera-menu-pop" class="driver-modal cam-list-grid">
         <span class="modal-title">Street View Cameras</span>
@@ -198,7 +216,7 @@
             touchZoom: true,
             doubleClickZoom: true,
             scrollWheelZoom: true
-        }).setView([49.2611, -123.1281], 11); 
+        }).setView([49.2611, -123.1281], 16); 
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); 
 
@@ -222,12 +240,12 @@
         const taxiIconStyle = L.divIcon({
             className: 'taxi-vector-icon',
             html: 'TAXI',
-            iconSize: [38, 24],
-            iconAnchor: [19, 12]
+            iconSize: [26, 26],
+            iconAnchor: [13, 13]
         }); 
 
         // =========================================================================================
-        // CAMERA ACTION CONTROLLER
+        // CAMERA ACTION CONTROLLER (NEW TAB BYPASS MECHANISM)
         // =========================================================================================
         function openCameraListMenu() {
             showModal('camera-menu-pop');
@@ -244,16 +262,22 @@
             vehiclePos = e.latlng;
             if (!vehicleMarker) {
                 vehicleMarker = L.marker(e.latlng, { icon: taxiIconStyle }).addTo(map);
-                map.setView(e.latlng, 14);
+                map.setView(e.latlng, 17);
             } else {
                 vehicleMarker.setLatLng(e.latlng);
             } 
             if (trackVehicleView) {
-                map.setView(e.latlng, 14);
+                map.setView(e.latlng, 17);
             } 
             fetchAddressFromCoordinates(e.latlng);
         }); 
 
+        setInterval(() => {
+            if (trackVehicleView && vehiclePos) {
+                map.setView(vehiclePos, 17);
+            }
+        }, 2000);
+        
         map.on('dragstart', function() {
             trackVehicleView = false;
             const btn = document.getElementById('lock-center-btn');
@@ -291,6 +315,10 @@
                 })
                 .catch(err => {
                     console.log("Geocoding recovery active: " + err.message);
+                    if (distanceMoved > 20) {
+                        currentAddressData.houseNumber = "";
+                        currentAddressData.streetName = `Zone Track [${latlng.lat.toFixed(3)}]`;
+                    }
                     if (forcedCallback) forcedCallback();
                 });
         } 
@@ -311,7 +339,7 @@
             btn.className = "util-circle active-center";
             btn.innerHTML = "MAP<br>LOCKED";
             if (vehiclePos) {
-                map.setView(vehiclePos, 14);
+                map.setView(vehiclePos, 17);
             }
         } 
 
@@ -335,7 +363,9 @@
             hideModals(); 
             if (!vehiclePos) return; 
 
-            fetchAddressFromCoordinates(vehiclePos, function() {
+            const targetPos = vehiclePos; 
+
+            fetchAddressFromCoordinates(targetPos, function() {
                 const redManIcon = L.divIcon({
                     className: 'red-man-icon',
                     html: selectionValue === 'Hotel Driveway' ? '🏨' : '🚶',
@@ -343,9 +373,9 @@
                     iconAnchor: [17, 32]
                 }); 
 
-                const flagMarker = L.marker(vehiclePos, { icon: redManIcon }).addTo(map);
+                const flagMarker = L.marker(targetPos, { icon: redManIcon }).addTo(map);
                 const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName;
-                const navigationUrl = `https://www.google.com/maps/search/?api=1&query=${vehiclePos.lat},${vehiclePos.lng}`;
+                const navigationUrl = `https://www.google.com/maps/search/?api=1&query=${targetPos.lat},${targetPos.lng}`;
 
                 let headerLabel = `<strong style="color:#ff3b30;">FLAG WAITING</strong>`;
                 if (selectionValue === 'Hotel Driveway') {
@@ -361,37 +391,15 @@
 
                 dispatchAudioNarration('Flag', selectionValue); 
 
-                setTimeout(() => { map.removeLayer(flagMarker); }, 300000); 
+                setTimeout(() => {
+                    map.removeLayer(flagMarker);
+                }, 300000); 
             });
         } 
 
-        // Simulation background engine flag drops
-        function injectSimulatedFlag(type, latlng, cabLabel) {
-            const redManIcon = L.divIcon({
-                className: 'red-man-icon',
-                html: type === 'Hotel Driveway' ? '🏨' : '🚶',
-                iconSize: [34, 34],
-                iconAnchor: [17, 32]
-            });
-
-            const marker = L.marker([latlng.lat, latlng.lng], { icon: redManIcon }).addTo(map);
-            const navigationUrl = `https://www.google.com/maps/search/?api=1&query=${latlng.lat},${latlng.lng}`;
-
-            marker.bindPopup(`
-                <strong style="color:#ff3b30;">FLAG DROP (SIMULATOR)</strong><br>
-                <strong>Reported By:</strong> ${cabLabel}<br>
-                <strong>Type:</strong> ${type}<br>
-                <span>Coordinates: ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}</span><br><br>
-                <a href="${navigationUrl}" target="_blank" style="display:block; text-align:center; background:#007aff; color:white; font-weight:bold; padding:8px 10px; border-radius:6px; text-decoration:none; text-transform:uppercase; font-size:11px;">Navigate to Flag</a>
-            `);
-            
-            dispatchSimulatedAudioAlert('Flag', type, cabLabel);
-            setTimeout(() => { map.removeLayer(marker); }, 180000);
-        }
-
 
         // =========================================================================================
-        // CAUTION LOGIC SUBROUTINES
+        // UPDATED CAUTION LOGIC SUBROUTINES WITH CUSTOM ICON DROP RULES
         // =========================================================================================
         function selectCautionType(type) {
             chosenCautionType = type;
@@ -403,58 +411,63 @@
             hideModals(); 
             if (!vehiclePos) return; 
 
-            fetchAddressFromCoordinates(vehiclePos, function() {
+            const targetPos = vehiclePos;
+            const typeLabel = chosenCautionType;
+            const directionLabel = directionValue; 
+
+            fetchAddressFromCoordinates(targetPos, function() {
                 let cautionIconHtml = "";
                 let classLabel = "";
                 let anchorOffsets = [15, 15];
                 let customSize = [30, 30];
 
-                if (chosenCautionType === 'Mild traffic') {
-                    cautionIconHtml = "🚘🚘"; classLabel = "caution-traffic-icon"; customSize = [50, 26]; anchorOffsets = [25, 13];
-                } else if (chosenCautionType === 'Heavy traffic') {
-                    cautionIconHtml = "🚘🚘🚘🚘"; classLabel = "caution-traffic-icon"; customSize = [90, 26]; anchorOffsets = [45, 13];
-                } else if (chosenCautionType === 'Accident') {
-                    cautionIconHtml = "💥🚗"; classLabel = "caution-accident-icon"; customSize = [44, 34]; anchorOffsets = [22, 17];
-                } else if (chosenCautionType === 'Road closure') {
-                    cautionIconHtml = "🚧"; classLabel = "caution-closure-icon"; customSize = [34, 34]; anchorOffsets = [17, 17];
+                // Check condition types and assign specific emoji symbols and sizes
+                if (typeLabel === 'Mild traffic') {
+                    cautionIconHtml = "🚘🚘";
+                    classLabel = "caution-traffic-icon";
+                    customSize = [50, 26];
+                    anchorOffsets = [25, 13];
+                } else if (typeLabel === 'Heavy traffic') {
+                    cautionIconHtml = "🚘🚘🚘🚘";
+                    classLabel = "caution-traffic-icon";
+                    customSize = [90, 26];
+                    anchorOffsets = [45, 13];
+                } else if (typeLabel === 'Accident') {
+                    cautionIconHtml = "💥🚗";
+                    classLabel = "caution-accident-icon";
+                    customSize = [44, 34];
+                    anchorOffsets = [22, 17];
+                } else if (typeLabel === 'Road closure') {
+                    cautionIconHtml = "🚧";
+                    classLabel = "caution-closure-icon";
+                    customSize = [34, 34];
+                    anchorOffsets = [17, 17];
                 }
 
-                const cautionDivIcon = L.divIcon({ className: classLabel, html: cautionIconHtml, iconSize: customSize, iconAnchor: anchorOffsets });
-                const dynamicMarker = L.marker(vehiclePos, { icon: cautionDivIcon }).addTo(map); 
+                const cautionDivIcon = L.divIcon({
+                    className: classLabel,
+                    html: cautionIconHtml,
+                    iconSize: customSize,
+                    iconAnchor: anchorOffsets
+                });
+
+                const dynamicMarker = L.marker(targetPos, { icon: cautionDivIcon }).addTo(map); 
                 const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName; 
 
                 dynamicMarker.bindPopup(`
-                    <strong style="color:#b38f00;">${chosenCautionType.toUpperCase()}</strong><br>
-                    <strong>Direction:</strong> ${directionValue}<br>
+                    <strong style="color:#b38f00;">${typeLabel.toUpperCase()}</strong><br>
+                    <strong>Direction:</strong> ${directionLabel}<br>
                     <span>Location: ${completeAddress}</span>
                 `).openPopup(); 
 
-                dispatchAudioNarration('Caution', { type: chosenCautionType, direction: directionValue });
-                setTimeout(() => { map.removeLayer(dynamicMarker); }, 1200000);
+                dispatchAudioNarration('Caution', { type: typeLabel, direction: directionLabel });
+
+                // Keep map clear by auto-removing the marker after 20 minutes
+                setTimeout(() => {
+                    map.removeLayer(dynamicMarker);
+                }, 1200000);
             });
         } 
-
-        // Simulation background engine caution drops
-        function injectSimulatedCaution(type, direction, latlng, cabLabel) {
-            let iconHtml = "🚧";
-            let classLbl = "caution-closure-icon";
-            let sz = [34, 34];
-            let anch = [17, 17];
-
-            if (type.includes('traffic')) { iconHtml = "🚘🚘"; classLbl = "caution-traffic-icon"; sz = [50, 26]; anch = [25, 13]; }
-            else if (type === 'Accident') { iconHtml = "💥🚗"; classLbl = "caution-accident-icon"; sz = [44, 34]; anch = [22, 17]; }
-
-            const divIcon = L.divIcon({ className: classLbl, html: iconHtml, iconSize: sz, iconAnchor: anch });
-            const marker = L.marker([latlng.lat, latlng.lng], { icon: divIcon }).addTo(map);
-            marker.bindPopup(`
-                <strong style="color:#b38f00;">${type.toUpperCase()} (SIM)</strong><br>
-                <strong>Reporter:</strong> ${cabLabel}<br>
-                <strong>Direction:</strong> ${direction}
-            `);
-            
-            dispatchSimulatedAudioAlert('Caution', { type: type, direction: direction }, cabLabel);
-            setTimeout(() => { map.removeLayer(marker); }, 180000);
-        }
 
 
         // =========================================================================================
@@ -470,7 +483,11 @@
             hideModals(); 
             if (!vehiclePos) return; 
 
-            fetchAddressFromCoordinates(vehiclePos, function() {
+            const targetPos = vehiclePos;
+            const typeLabel = chosenPoliceType; 
+            const directionLabel = directionValue; 
+
+            fetchAddressFromCoordinates(targetPos, function() {
                 const policeIcon = L.divIcon({
                     className: 'police-officer-icon',
                     html: '👮',
@@ -478,34 +495,22 @@
                     iconAnchor: [18, 18]
                 });
 
-                const officerMarker = L.marker(vehiclePos, { icon: policeIcon }).addTo(map);
+                const officerMarker = L.marker(targetPos, { icon: policeIcon }).addTo(map);
                 const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName; 
 
                 officerMarker.bindPopup(`
                     <strong style="color:#007aff;">POLICE ENFORCEMENT</strong><br>
-                    <strong>Type:</strong> ${chosenPoliceType.toUpperCase()} (${directionValue})<br>
+                    <strong>Type:</strong> ${typeLabel.toUpperCase()} (${directionLabel})<br>
                     <span>Location: ${completeAddress}</span>
                 `).openPopup(); 
 
-                dispatchAudioNarration('Police', { type: chosenPoliceType, direction: directionValue });
-                setTimeout(() => { map.removeLayer(officerMarker); }, 1800000);
+                dispatchAudioNarration('Police', { type: typeLabel, direction: directionLabel });
+
+                setTimeout(() => {
+                    map.removeLayer(officerMarker);
+                }, 1800000);
             });
         } 
-
-        // Simulation background engine police drops
-        function injectSimulatedPolice(type, direction, latlng, cabLabel) {
-            const policeIcon = L.divIcon({ className: 'police-officer-icon', html: '👮', iconSize: [36, 36], iconAnchor: [18, 18] });
-            const marker = L.marker([latlng.lat, latlng.lng], { icon: policeIcon }).addTo(map);
-            marker.bindPopup(`
-                <strong style="color:#007aff;">POLICE ZONE (SIM)</strong><br>
-                <strong>Unit Reporting:</strong> ${cabLabel}<br>
-                <strong>Type:</strong> ${type.toUpperCase()}<br>
-                <strong>Direction:</strong> ${direction}
-            `);
-            
-            dispatchSimulatedAudioAlert('Police', { type: type, direction: direction }, cabLabel);
-            setTimeout(() => { map.removeLayer(marker); }, 180000);
-        }
 
 
         // =========================================================================================
@@ -513,6 +518,7 @@
         // =========================================================================================
         function breakHouseNumbersIntoCouples(numberStr) {
             if (!numberStr || isNaN(numberStr)) return numberStr;
+            
             if (numberStr.length === 4) {
                 const leadingPair = parseInt(numberStr.substring(0, 2), 10);
                 const trailingPair = parseInt(numberStr.substring(2, 4), 10);
@@ -520,6 +526,7 @@
                 if (trailingPair < 10) return `${leadingPair} oh ${trailingPair}`;
                 return `${leadingPair} ${trailingPair}`;
             }
+            
             if (numberStr.length === 3) {
                 const leadingDigit = parseInt(numberStr.substring(0, 1), 10);
                 const trailingPair = parseInt(numberStr.substring(1, 3), 10);
@@ -527,16 +534,18 @@
                 if (trailingPair < 10) return `${leadingDigit} oh ${trailingPair}`;
                 return `${leadingDigit} ${trailingPair}`;
             } 
+
             return numberStr;
         } 
 
 
         // =========================================================================================
-        // CENTRAL TEXT-TO-SPEECH BROADCAST MACHINE (REAL HARDWARE DROPS)
+        // CENTRAL TEXT-TO-SPEECH BROADCAST MACHINE
         // =========================================================================================
         function dispatchAudioNarration(category, payload) {
             const spokenHouseNumber = breakHouseNumbersIntoCouples(currentAddressData.houseNumber);
             const addressAudioString = spokenHouseNumber ? `${spokenHouseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName;
+            
             let finalSpeechString = "";
             
             if (category === 'Flag') {
@@ -551,144 +560,73 @@
             } 
             else if (category === 'Police') {
                 const speechDirection = payload.direction.toLowerCase();
-                if (payload.type === 'emergency') { finalSpeechString = `One police reported ahead ${speechDirection} at ${addressAudioString} emergency`; } 
-                else if (payload.type === 'hidden') { finalSpeechString = `One police reported ahead ${speechDirection} at ${addressAudioString} they are hiding they are hiding`; } 
-                else { finalSpeechString = `One police reported ahead ${speechDirection} at ${addressAudioString} Radar Radar`; }
+                
+                if (payload.type === 'emergency') {
+                    finalSpeechString = `One police reported ahead ${speechDirection} at ${addressAudioString} emergency`;
+                } 
+                else if (payload.type === 'hidden') {
+                    finalSpeechString = `One police reported ahead ${speechDirection} at ${addressAudioString} they are hiding they are hiding`;
+                } 
+                else {
+                    finalSpeechString = `One police reported ahead ${speechDirection} at ${addressAudioString} Radar Radar`;
+                }
             } 
 
             lastSpokenSpeechString = finalSpeechString;
-            executeSpeechBuffer(finalSpeechString);
+
+            if (audioMuted) return; 
+
+            const clearHardwareBuffer = new SpeechSynthesisUtterance("");
+            window.speechSynthesis.speak(clearHardwareBuffer); 
+
+            setTimeout(() => {
+                const utterance = new SpeechSynthesisUtterance(finalSpeechString);
+                utterance.rate = 1.0; 
+                window.speechSynthesis.speak(utterance);
+            }, 1500);
         } 
 
+
         // =========================================================================================
-        // SPECIAL SIMULATOR AUDIO BROADCASTER
+        // INSTANT AUDIO REPLAY
         // =========================================================================================
-        function dispatchSimulatedAudioAlert(category, payload, cabLabel) {
-            let finalSpeechString = "";
-            const standardCabSpelling = cabLabel.split('').join(' ');
-
-            if (category === 'Flag') {
-                if (payload === 'Hotel Driveway') {
-                    finalSpeechString = `Attention. ${standardCabSpelling} reports one flag waiting at hotel driveway.`;
-                } else {
-                    finalSpeechString = `Attention. ${standardCabSpelling} reports one flag waiting ${payload.toLowerCase()}.`;
-                }
-            } 
-            else if (category === 'Caution') {
-                finalSpeechString = `Attention. ${standardCabSpelling} updates traffic conditions. ${payload.type.toLowerCase()} reported heading ${payload.direction.toLowerCase()}.`;
-            } 
-            else if (category === 'Police') {
-                const speechDirection = payload.direction.toLowerCase();
-                if (payload.type === 'hidden') {
-                    finalSpeechString = `Attention. ${standardCabSpelling} warnings. Police trap reported hiding ${speechDirection}.`;
-                } else {
-                    finalSpeechString = `Attention. ${standardCabSpelling} warnings. Police ${payload.type.toLowerCase()} check ahead ${speechDirection}.`;
-                }
-            }
-
-            lastSpokenSpeechString = finalSpeechString;
-            executeSpeechBuffer(finalSpeechString);
-        }
-
-        function executeSpeechBuffer(textToSpeak) {
-            if (audioMuted || !textToSpeak) return;
-
-            try {
-                const clearHardwareBuffer = new SpeechSynthesisUtterance("");
-                window.speechSynthesis.speak(clearHardwareBuffer); 
-
-                setTimeout(() => {
-                    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                    utterance.rate = 1.0; 
-                    window.speechSynthesis.speak(utterance);
-                }, 400);
-            } catch (err) {
-                console.log("Audio speech engine line collision: " + err.message);
-            }
-        }
-
         function replayLastAudioNarration() {
             if (!lastSpokenSpeechString) return;
-            executeSpeechBuffer(lastSpokenSpeechString);
+            
+            const clearHardwareBuffer = new SpeechSynthesisUtterance("");
+            window.speechSynthesis.speak(clearHardwareBuffer); 
+
+            setTimeout(() => {
+                const utterance = new SpeechSynthesisUtterance(lastSpokenSpeechString);
+                utterance.rate = 1.0; 
+                window.speechSynthesis.speak(utterance);
+            }, 200);
         }
 
 
         // =========================================================================================
-        // SIMULATOR ENGINE 
+        // DRIVER SUGGESTION HANDLING SUBROUTINE
         // =========================================================================================
-        let simulatedTaxis = [];
-        let simMarkersMap = {};
-
-        function initTaxiSimulator() {
-            console.log("Activating 20 Multi-City Autonomous Vehicles...");
-
-            const hubs = [
-                { lat: 49.2611, lng: -123.1281 }, // Vancouver
-                { lat: 49.1666, lng: -123.1336 }, // Richmond
-                { lat: 49.1913, lng: -122.8490 }  // Surrey
-            ];
-
-            simulatedTaxis = Array.from({ length: 20 }, (_, i) => {
-                const idNum = i + 1;
-                const assignedHub = hubs[i % hubs.length];
-                return {
-                    id: `sim_cab_${idNum}`,
-                    label: `YC${100 + idNum}`,
-                    lat: assignedHub.lat + (Math.random() - 0.5) * 0.05,
-                    lng: assignedHub.lng + (Math.random() - 0.5) * 0.07,
-                    speed: 0.00014 
-                };
+        function submitDriverSuggestion() {
+            const field = document.getElementById('driver-suggestion-text');
+            const note = field.value.trim();
+            
+            if (!note) {
+                alert("Please enter a suggestion before submitting.");
+                return;
+            }
+            
+            // Log target tracking capture details to development diagnostic output console
+            console.log("SUGGESTION CAPTURED: ", {
+                timestamp: new Date().toISOString(),
+                coordinates: vehiclePos ? [vehiclePos.lat, vehiclePos.lng] : "No GPS context",
+                messageContent: note
             });
-
-            // Loop 1: Handle vehicle motion physics (Updates every 3 seconds)
-            setInterval(() => {
-                simulatedTaxis.forEach(taxi => {
-                    taxi.lat += (Math.random() - 0.5) * taxi.speed;
-                    taxi.lng += (Math.random() - 0.5) * taxi.speed;
-                    
-                    const markerHtml = `<div style="font-weight:bold; font-size:9px; text-align:center; line-height:22px;">YC${taxi.id.split('_')[2]}</div>`;
-                    const simIcon = L.divIcon({ className: 'taxi-vector-icon', html: markerHtml, iconSize: [36, 24], iconAnchor: [18, 12] });
-
-                    if (!simMarkersMap[taxi.id]) {
-                        simMarkersMap[taxi.id] = L.marker([taxi.lat, taxi.lng], { icon: simIcon }).addTo(map);
-                    } else {
-                        simMarkersMap[taxi.id].setLatLng([taxi.lat, taxi.lng]);
-                    }
-                });
-            }, 3000);
-
-            // Loop 2: Safe automated grid drops (UPDATED: Fires every 30 seconds)
-            setInterval(() => {
-                if (simulatedTaxis.length === 0) return;
-
-                const randomCab = simulatedTaxis[Math.floor(Math.random() * simulatedTaxis.length)];
-                const cabPos = { lat: randomCab.lat, lng: randomCab.lng };
-
-                const eventRoulette = Math.random();
-                const directions = ['Northbound', 'Southbound', 'Eastbound', 'Westbound', 'All Directions'];
-                const randDir = directions[Math.floor(Math.random() * directions.length)];
-
-                try {
-                    if (eventRoulette < 0.50) {
-                        const flagTypes = ['Northbound', 'Southbound', 'Northeast Corner', 'Hotel Driveway'];
-                        const randType = flagTypes[Math.floor(Math.random() * flagTypes.length)];
-                        injectSimulatedFlag(randType, cabPos, randomCab.label);
-                    } 
-                    else if (eventRoulette < 0.80) {
-                        const cautionTypes = ['Mild traffic', 'Heavy traffic', 'Accident', 'Road closure'];
-                        const randCaution = cautionTypes[Math.floor(Math.random() * cautionTypes.length)];
-                        injectSimulatedCaution(randCaution, randDir, cabPos, randomCab.label);
-                    } 
-                    else {
-                        const policeTypes = ['radar', 'emergency', 'hidden'];
-                        const randPolice = policeTypes[Math.floor(Math.random() * policeTypes.length)];
-                        injectSimulatedPolice(randPolice, randDir, cabPos, randomCab.label);
-                    }
-                    console.log(`[SIMULATOR] Event placed successfully by ${randomCab.label}`);
-                } catch (err) {
-                    console.log("Sim drop bypassed: " + err.message);
-                }
-            }, 30000); // 30000ms = 30 seconds
+            
+            // Reset state frame interface cleanly
+            field.value = "";
+            hideModals();
+            alert("Thank you! Your suggestion has been recorded.");
         }
 
 
@@ -697,17 +635,20 @@
         // =========================================================================================
         async function maintainScreenWakeLock() {
             try {
-                if ('wakeLock' in navigator) { wakeLockToken = await navigator.wakeLock.request('screen'); }
-            } catch (err) { console.log("Wake lock notice: " + err.message); }
+                if ('wakeLock' in navigator) {
+                    wakeLockToken = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.log("Wake lock framework notice: " + err.message);
+            }
         } 
 
-        window.addEventListener('load', () => {
-            initTaxiSimulator();
-            maintainScreenWakeLock();
-        }); 
+        window.addEventListener('load', maintainScreenWakeLock); 
 
         document.addEventListener('visibilitychange', async () => {
-            if (wakeLockToken !== null && document.visibilityState === 'visible') { maintainScreenWakeLock(); }
+            if (wakeLockToken !== null && document.visibilityState === 'visible') {
+                maintainScreenWakeLock();
+            }
         });
     </script>
 </body>
