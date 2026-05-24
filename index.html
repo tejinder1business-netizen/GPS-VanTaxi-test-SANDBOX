@@ -181,7 +181,7 @@
             <button class="btn-police-opt" onclick="dropPoliceMarker('Northbound')">North</button>
             <button class="btn-police-opt" onclick="dropPoliceMarker('Southbound')">South</button>
             <button class="btn-police-opt" onclick="dropPoliceMarker('Eastbound')">East</button>
-            <button class="btn-police-opt" onclick="dropPoliceMarker('Westbound')">West</button>
+            <button class="btn-police-opt" onclick="dropPoliceMarker('Westbound')">West**</button>
             <button class="btn-police-opt full-width-btn" onclick="dropPoliceMarker('All Directions')">All Directions</button>
         </div>
     </div> 
@@ -329,7 +329,7 @@
 
 
         // =========================================================================================
-        // DISPATCH PASSENGER FLAG MARKER (FIXED)
+        // DISPATCH PASSENGER FLAG MARKER
         // =========================================================================================
         function dropFlagDirect(selectionValue) {
             hideModals(); 
@@ -365,7 +365,7 @@
             });
         } 
 
-        // FIXED INTERFACE: Simulation background engine drops
+        // Simulation background engine flag drops
         function injectSimulatedFlag(type, latlng, cabLabel) {
             const redManIcon = L.divIcon({
                 className: 'red-man-icon',
@@ -384,6 +384,10 @@
                 <span>Coordinates: ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}</span><br><br>
                 <a href="${navigationUrl}" target="_blank" style="display:block; text-align:center; background:#007aff; color:white; font-weight:bold; padding:8px 10px; border-radius:6px; text-decoration:none; text-transform:uppercase; font-size:11px;">Navigate to Flag</a>
             `);
+            
+            // Trigger customized voice alert for simulated drop
+            dispatchSimulatedAudioAlert('Flag', type, cabLabel);
+            
             setTimeout(() => { map.removeLayer(marker); }, 180000);
         }
 
@@ -432,7 +436,7 @@
             });
         } 
 
-        // FIXED INTERFACE: Simulation background engine caution drops
+        // Simulation background engine caution drops
         function injectSimulatedCaution(type, direction, latlng, cabLabel) {
             let iconHtml = "🚧";
             let classLbl = "caution-closure-icon";
@@ -449,6 +453,10 @@
                 <strong>Reporter:</strong> ${cabLabel}<br>
                 <strong>Direction:</strong> ${direction}
             `);
+            
+            // Trigger customized voice alert for simulated caution
+            dispatchSimulatedAudioAlert('Caution', { type: type, direction: direction }, cabLabel);
+            
             setTimeout(() => { map.removeLayer(marker); }, 180000);
         }
 
@@ -488,7 +496,7 @@
             });
         } 
 
-        // FIXED INTERFACE: Simulation background engine police drops
+        // Simulation background engine police drops
         function injectSimulatedPolice(type, direction, latlng, cabLabel) {
             const policeIcon = L.divIcon({ className: 'police-officer-icon', html: '👮', iconSize: [36, 36], iconAnchor: [18, 18] });
             const marker = L.marker([latlng.lat, latlng.lng], { icon: policeIcon }).addTo(map);
@@ -498,6 +506,10 @@
                 <strong>Type:</strong> ${type.toUpperCase()}<br>
                 <strong>Direction:</strong> ${direction}
             `);
+            
+            // Trigger customized voice alert for simulated speed trap
+            dispatchSimulatedAudioAlert('Police', { type: type, direction: direction }, cabLabel);
+            
             setTimeout(() => { map.removeLayer(marker); }, 180000);
         }
 
@@ -526,7 +538,7 @@
 
 
         // =========================================================================================
-        // CENTRAL TEXT-TO-SPEECH BROADCAST MACHINE
+        // CENTRAL TEXT-TO-SPEECH BROADCAST MACHINE (REAL HARDWARE DROPS)
         // =========================================================================================
         function dispatchAudioNarration(category, payload) {
             const spokenHouseNumber = breakHouseNumbersIntoCouples(currentAddressData.houseNumber);
@@ -551,27 +563,62 @@
             } 
 
             lastSpokenSpeechString = finalSpeechString;
-            if (audioMuted) return; 
-
-            const clearHardwareBuffer = new SpeechSynthesisUtterance("");
-            window.speechSynthesis.speak(clearHardwareBuffer); 
-
-            setTimeout(() => {
-                const utterance = new SpeechSynthesisUtterance(finalSpeechString);
-                utterance.rate = 1.0; 
-                window.speechSynthesis.speak(utterance);
-            }, 1500);
+            executeSpeechBuffer(finalSpeechString);
         } 
+
+        // =========================================================================================
+        // NEW SUITE: SPECIAL SIMULATOR AUDIO BROADCASTER (Does not depend on GPS Address loops)
+        // =========================================================================================
+        function dispatchSimulatedAudioAlert(category, payload, cabLabel) {
+            let finalSpeechString = "";
+            
+            // Format cab names smoothly (e.g., "Y C 1 0 5") so screen readers say individual numbers
+            const standardCabSpelling = cabLabel.split('').join(' ');
+
+            if (category === 'Flag') {
+                if (payload === 'Hotel Driveway') {
+                    finalSpeechString = `Attention. ${standardCabSpelling} reports one flag waiting at hotel driveway.`;
+                } else {
+                    finalSpeechString = `Attention. ${standardCabSpelling} reports one flag waiting ${payload.toLowerCase()}.`;
+                }
+            } 
+            else if (category === 'Caution') {
+                finalSpeechString = `Attention. ${standardCabSpelling} updates traffic conditions. ${payload.type.toLowerCase()} reported heading ${payload.direction.toLowerCase()}.`;
+            } 
+            else if (category === 'Police') {
+                const speechDirection = payload.direction.toLowerCase();
+                if (payload.type === 'hidden') {
+                    finalSpeechString = `Attention. ${standardCabSpelling} warnings. Police trap reported hiding ${speechDirection}.`;
+                } else {
+                    finalSpeechString = `Attention. ${standardCabSpelling} warnings. Police ${payload.type.toLowerCase()} check ahead ${speechDirection}.`;
+                }
+            }
+
+            lastSpokenSpeechString = finalSpeechString;
+            executeSpeechBuffer(finalSpeechString);
+        }
+
+        // Dedicated helper to clean the hardware speech channels cleanly
+        function executeSpeechBuffer(textToSpeak) {
+            if (audioMuted || !textToSpeak) return;
+
+            try {
+                const clearHardwareBuffer = new SpeechSynthesisUtterance("");
+                window.speechSynthesis.speak(clearHardwareBuffer); 
+
+                setTimeout(() => {
+                    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                    utterance.rate = 1.0; 
+                    window.speechSynthesis.speak(utterance);
+                }, 400);
+            } catch (err) {
+                console.log("Audio speech engine line collision: " + err.message);
+            }
+        }
 
         function replayLastAudioNarration() {
             if (!lastSpokenSpeechString) return;
-            const clearHardwareBuffer = new SpeechSynthesisUtterance("");
-            window.speechSynthesis.speak(clearHardwareBuffer); 
-            setTimeout(() => {
-                const utterance = new SpeechSynthesisUtterance(lastSpokenSpeechString);
-                utterance.rate = 1.0; 
-                window.speechSynthesis.speak(utterance);
-            }, 200);
+            executeSpeechBuffer(lastSpokenSpeechString);
         }
 
 
@@ -612,7 +659,7 @@
                     const simIcon = L.divIcon({ className: 'taxi-vector-icon', html: markerHtml, iconSize: [36, 24], iconAnchor: [18, 12] });
 
                     if (!simMarkersMap[taxi.id]) {
-                        simMarkersMap[taxi.id] = L.marker([taxi.lat, taxi.taxi || taxi.lng], { icon: simIcon }).addTo(map);
+                        simMarkersMap[taxi.id] = L.marker([taxi.lat, taxi.lng], { icon: simIcon }).addTo(map);
                     } else {
                         simMarkersMap[taxi.id].setLatLng([taxi.lat, taxi.lng]);
                     }
@@ -630,7 +677,6 @@
                 const directions = ['Northbound', 'Southbound', 'Eastbound', 'Westbound', 'All Directions'];
                 const randDir = directions[Math.floor(Math.random() * directions.length)];
 
-                // Wrapped inside a try/catch block so a glitch can never freeze the thread
                 try {
                     if (eventRoulette < 0.50) {
                         const flagTypes = ['Northbound', 'Southbound', 'Northeast Corner', 'Hotel Driveway'];
