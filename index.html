@@ -65,11 +65,11 @@
 
         /* BRIGHT THEMED UTILITY PANEL MENU BUTTONS */
         .utility-menu-grid { width: 340px; }
-        .btn-caution-menu { background: #ffcc00 !important; color: #000000 !important; border: 3px solid #e6b800 !important; }
-        .btn-cameras-menu { background: #34c759 !important; color: #ffffff !important; border: 3px solid #28a745 !important; }
-        .btn-replay-menu { background: #5856d6 !important; color: #ffffff !important; border: 3px solid #433fa7 !important; }
-        .btn-logs-menu { background: #00c7be !important; color: #ffffff !important; border: 3px solid #00a39c !important; }
-        .btn-feedback-menu { background: #ff9500 !important; color: #ffffff !important; border: 3px solid #cc7700 !important; }
+        .btn-caution-menu full-width-btn { background: #ffcc00 !important; color: #000000 !important; border: 3px solid #e6b800 !important; }
+        .btn-cameras-menu full-width-btn { background: #34c759 !important; color: #ffffff !important; border: 3px solid #28a745 !important; }
+        .btn-replay-menu full-width-btn { background: #5856d6 !important; color: #ffffff !important; border: 3px solid #433fa7 !important; }
+        .btn-logs-menu full-width-btn { background: #00c7be !important; color: #ffffff !important; border: 3px solid #00a39c !important; }
+        .btn-feedback-menu full-width-btn { background: #ff9500 !important; color: #ffffff !important; border: 3px solid #cc7700 !important; }
 
         /* Caution Menu Styles (Solid Yellow) */
         .caution-grid { width: 310px; }
@@ -111,7 +111,7 @@
         .suggestion-input { width: 100%; height: 120px; padding: 12px; border-radius: 8px; border: 2px solid #a2a2a6; font-size: 1rem; resize: none; margin-bottom: 14px; font-family: inherit; }
         .suggestion-input:focus { border-color: #007aff; outline: none; }
         .btn-submit-sugg { background: #007aff; color: white; border: none; width: 100%; padding: 14px; border-radius: 8px; font-weight: 900; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; margin-bottom: 10px; }
-        .btn-cancel-sugg { background: #e5e5ea; color: #1c1c1e; border: none; width: 100%; padding: 10px; border-radius: 8px; font-weight: 900; font-size: 0.95rem; cursor: pointer; text-transform: uppercase; }
+        .btn-cancel-sugg { background: #e5e5ea; color: #1c1c1e; border: none; width: 100%; padding: 10px; border-radius: 8px; font-weight: 900; font-size: 0.95rem; cursor: pointer; text-transform: uppercase; margin-bottom: 10px; }
 
         /* CHAT LOG HISTORY WINDOW STYLES - FIXED TO MAINTAIN SOLID ALL-THE-TIME SYSTEM THEME COLORS */
         .chat-log-grid { width: 360px; max-height: 80vh; display: flex; flex-direction: column; padding: 16px; }
@@ -263,7 +263,7 @@
         <div class="grid-options">
             <button class="btn-police-opt" onclick="dropPoliceMarker('Northbound')">North</button>
             <button class="btn-police-opt" onclick="dropPoliceMarker('Southbound')">South</button>
-            <button class="btn-police-opt" onclick="dropPoliceMarker('Eastbound')">East</button>
+            <button class="btn-police-opt" onclick="dropPoliceMarker('Eastbound')">Eastprocessed</button>
             <button class="btn-police-opt" onclick="dropPoliceMarker('Westbound')">West</button>
             <button class="btn-police-opt full-width-btn" onclick="dropPoliceMarker('All Directions')">All Directions</button>
         </div>
@@ -306,7 +306,7 @@
         let activeChatLogTab = "Flag";
 
         // =========================================================================================
-        // COMPREHENSIVE CANADIAN REGIONAL MASTER DATA CATALOG - FIX APPLIED FOR REGIONAL HIGHWAYS
+        // COMPREHENSIVE REGIONAL MASTER DATA CATALOG - DIRECT STABLE LIVE GRAPHIC RE-ENGINEERING
         // =========================================================================================
         const MASTER_CAMERA_CATALOG = [
             // VANCOUVER TAB DATA
@@ -321,21 +321,31 @@
             { id: "van_georgia", name: "W Georgia & Denman", url: "https://trafficcams.vancouver.ca/denman3.htm", region: "vancouver" },
             { id: "van_broadway", name: "Broadway & Commercial", url: "https://trafficcams.vancouver.ca/commercialBroadway.htm", region: "vancouver" },
             
-            // SURREY & RICHMOND NEIGHBORHOODS TAB DATA
-            { id: "reg_surr104", name: "Surrey: 104 Ave & 152 St", url: "https://images.drivebc.ca/bchighwaycam/pub/html/www/806.html", region: "regional" },
-            { id: "reg_surrking", name: "Surrey: King George & 72 Ave", url: "https://images.drivebc.ca/bchighwaycam/pub/html/www/1031.html", region: "regional" },
-            { id: "reg_richno3", name: "Richmond: Hwy 99 & Westminster Hwy", url: "https://images.drivebc.ca/bchighwaycam/pub/html/www/611.html", region: "regional" },
-            { id: "reg_richbridge", name: "Richmond: Knight St & Bridgeport", url: "https://images.drivebc.ca/bchighwaycam/pub/html/www/1109.html", region: "regional" },
-            { id: "reg_burn_lougheed", name: "Burnaby: Lougheed & Willingdon", url: "https://images.drivebc.ca/bchighwaycam/pub/html/www/479.html", region: "regional" },
-            { id: "reg_burn_kingsway", name: "Burnaby: Hwy 1 & Gaglardi", url: "https://images.drivebc.ca/bchighwaycam/pub/html/www/485.html", region: "regional" },
+            // SURREY & RICHMOND NEIGHBORHOODS TAB DATA (ORIGINAL + BRAND NEW INTEGRATIONS)
+            { id: "reg_surr104", name: "Surrey: 104 Ave & 152 St", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/806.jpg", region: "regional" },
+            { id: "reg_surrking", name: "Surrey: King George & 72 Ave", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/1031.jpg", region: "regional" },
+            { id: "reg_richno3", name: "Richmond: Hwy 99 & Westminster Hwy", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/611.jpg", region: "regional" },
+            { id: "reg_richbridge", name: "Richmond: Knight St & Bridgeport", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/1109.jpg", region: "regional" },
+            { id: "reg_burn_lougheed", name: "Burnaby: Lougheed & Willingdon", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/479.jpg", region: "regional" },
+            { id: "reg_burn_kingsway", name: "Burnaby: Hwy 1 & Gaglardi", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/485.jpg", region: "regional" },
+            
+            // New Additions requested for Surrey & Richmond tab:
+            { id: "reg_portman_br", name: "Port Mann Bridge", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/292.jpg", region: "regional" },
+            { id: "reg_hwy91_conn", name: "Hwy 91 Connector", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/575.jpg", region: "regional" },
+            { id: "reg_hwy91_main", name: "Highway 91", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/322.jpg", region: "regional" },
+            { id: "reg_hwy91_annacis", name: "Hwy 91 & Annacis Island", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/780.jpg", region: "regional" },
+            { id: "reg_alexfraser_br", name: "Alex Fraser Bridge (Hwy 91)", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/91.jpg", region: "regional" },
+            { id: "reg_hwy99_cambie", name: "Hwy 99 & Cambie Rd", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/309.jpg", region: "regional" },
+            { id: "reg_taylor_way", name: "Taylor Way", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/21.jpg", region: "regional" },
+            { id: "reg_steveston_hwy", name: "Steveston Hwy & Hwy 99", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/29.jpg", region: "regional" },
 
-            // HIGHWAYS & CONNECTIONS TAB DATA (DIRECT LINK PATH CHANNELS REGISTERED)
+            // HIGHWAYS & CONNECTIONS TAB DATA
             { id: "hwy_1_1st", name: "HWY 1 & 1st Ave", url: "https://trafficcams.vancouver.ca/transcanada01.htm", region: "highways" },
-            { id: "hwy_alex_fraser", name: "Alex Fraser Bridge", url: "https://images.drivebc.ca/bchighwaycam/pub/html/www/254.html", region: "highways" },
-            { id: "hwy_massey", name: "Massey Tunnel (Hwy 99)", url: "https://images.drivebc.ca/bchighwaycam/pub/html/www/93.html", region: "highways" },
-            { id: "hwy_ironworkers", name: "Ironworkers Second Narrows", url: "https://images.drivebc.ca/bchighwaycam/pub/html/www/5.html", region: "highways" },
-            { id: "hwy_lionsgate", name: "Lions Gate Bridge", url: "https://images.drivebc.ca/bchighwaycam/pub/html/www/2.html", region: "highways" },
-            { id: "hwy_port_mann", name: "Port Mann Bridge (Hwy 1)", url: "https://images.drivebc.ca/bchighwaycam/pub/html/www/454.html", region: "highways" }
+            { id: "hwy_alex_fraser", name: "Alex Fraser Bridge", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/92.jpg", region: "highways" },
+            { id: "hwy_massey", name: "Massey Tunnel (Hwy 99)", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/29.jpg", region: "highways" },
+            { id: "hwy_ironworkers", name: "Ironworkers Second Narrows", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/5.jpg", region: "highways" },
+            { id: "hwy_lionsgate", name: "Lions Gate Bridge", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/20.jpg", region: "highways" },
+            { id: "hwy_port_mann", name: "Port Mann Bridge (Hwy 1)", url: "https://images.drivebc.ca/bchighwaycam/pub/cameras/454.jpg", region: "highways" }
         ];
 
         // System Driver State Container for Personalized Selections
@@ -511,6 +521,13 @@
             showModal('camera-menu-pop');
         }
 
+        // =========================================================================================
+        // CAMERA ACTION CONTROLLER (NEW TAB BYPASS MECHANISM)
+        // =========================================================================================
+        function openLiveCameraTab(targetUrl) {
+            window.open(targetUrl, '_blank');
+        } 
+
         function triggerReplayFromMenu() {
             hideModals();
             replayLastAudioNarration();
@@ -530,13 +547,6 @@
             document.getElementById(currentModalId).style.display = 'none';
             showModal('utility-menu-pop');
         }
-
-        // =========================================================================================
-        // CAMERA ACTION CONTROLLER (NEW TAB BYPASS MECHANISM)
-        // =========================================================================================
-        function openLiveCameraTab(targetUrl) {
-            window.open(targetUrl, '_blank');
-        } 
 
         // GEOLOCATION ENGINE
         map.locate({ watch: true, enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }); 
