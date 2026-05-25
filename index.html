@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en)
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yellow Cab Companion Pro V10</title>
+    <title>Yellow Cab Companion Pro V9</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
@@ -11,7 +11,7 @@
         
         #map { width: 100%; height: 100%; position: absolute; top: 0; bottom: 0; z-index: 1; }
         
-        /* Top HUD Action Buttons */
+        /* Top HUD Action Buttons - Repositioned to Corners */
         .top-actions { position: absolute; top: 20px; left: 0; right: 0; padding: 0 20px; display: flex; justify-content: space-between; z-index: 1000; pointer-events: none; }
         .action-btn { pointer-events: auto; width: 82px; height: 82px; border-radius: 50%; border: 4px solid #fff; color: white; font-weight: bold; font-size: 0.82rem; cursor: pointer; box-shadow: 0 6px 12px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         .btn-flag { background: #ff3b30; }
@@ -34,53 +34,54 @@
         .taxi-vector-icon { background: #ffd100; border: 2px solid #000; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.4); text-align: center; font-weight: bold; font-size: 10px; line-height: 24px; color: black; }
         .taxi-vector-icon::after { content: ''; position: absolute; top: -5px; left: 6px; width: 10px; height: 4px; background: black; border-radius: 1px; } 
 
-        /* Custom Drop Markers */
+        /* Custom Drop Markers - SOLID COLORS */
         .red-man-icon { font-size: 34px; text-align: center; line-height: 34px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.6)); }
         .police-officer-icon { font-size: 36px; text-align: center; line-height: 36px; filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.6)); }
         
-        /* Dynamic Caution Marker Icons */
+        /* DYNAMIC CAUTION MARKER ICONS */
         .caution-traffic-icon { font-size: 26px; text-align: center; line-height: 26px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.6)); white-space: nowrap; }
         .caution-accident-icon { font-size: 34px; text-align: center; line-height: 34px; filter: drop-shadow(0px 2px 5px rgba(0,0,0,0.6)); }
         .caution-closure-icon { font-size: 34px; text-align: center; line-height: 34px; filter: drop-shadow(0px 2px 5px rgba(0,0,0,0.6)); }
         
-        /* Modals and Overlays Base */
+        /* Driving Selection Popups - SOLID WHITE BACKGROUND FOUNDATIONS */
         .driver-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 22px; border-radius: 16px; z-index: 2000; box-shadow: 0 14px 40px rgba(0,0,0,0.5); background: #ffffff !important; border: 4px solid #1c1c1e; }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 1999; }
         
         .modal-title { font-size: 1.15rem; font-weight: 900; margin-bottom: 16px; text-align: center; display: block; border-bottom: 2px solid #e5e5ea; padding-bottom: 8px; color: #1c1c1e; text-transform: uppercase; letter-spacing: 0.5px; }
         .grid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         
-        /* Menu Configuration Options Typography styling */
-        .grid-options button { font-weight: 900 !important; font-size: 1.12rem; padding: 18px 10px; border-radius: 12px; cursor: pointer; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.15); border: none; }
+        /* Options Direct Layout & Bold Typography Assertions */
+        .grid-options button { font-weight: 900 !important; font-size: 1.12rem; padding: 18px 10px; border-radius: 12px; cursor: pointer; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
         .grid-options button:active { filter: brightness(0.85); }
         .full-width-btn { grid-column: span 2; } 
 
-        /* =========================================================================================
-           SOLID BRIGHT COLOR THEMES FOR UTILITY MENU BUTTONS
-           ========================================================================================= */
+        /* SOLID COLOR BUTTON THEMES */
+        .flag-grid { width: 345px; max-height: 90vh; overflow-y: auto; }
+        .btn-flag-cardinal { background: #ff3b30 !important; color: #ffffff !important; border: 3px solid #ff3b30; }
+        .btn-flag-corner { background: #34c759 !important; color: #ffffff !important; border: 3px solid #34c759; } 
+        
+        /* Hotel Button Style Assertion */
+        .btn-flag-hotel { grid-column: span 2; background: #5856d6 !important; color: #ffffff !important; border: 3px solid #5856d6; }
+
+        /* BRIGHT THEMED UTILITY PANEL MENU BUTTONS */
         .utility-menu-grid { width: 340px; }
         .btn-caution-menu { background: #ffcc00 !important; color: #000000 !important; border: 3px solid #e6b800 !important; }
         .btn-cameras-menu { background: #34c759 !important; color: #ffffff !important; border: 3px solid #28a745 !important; }
         .btn-replay-menu { background: #5856d6 !important; color: #ffffff !important; border: 3px solid #433fa7 !important; }
-        .btn-logs-menu { background: #007aff !important; color: #ffffff !important; border: 3px solid #0056b3 !important; }
+        .btn-logs-menu { background: #00c7be !important; color: #ffffff !important; border: 3px solid #00a39c !important; }
         .btn-feedback-menu { background: #ff9500 !important; color: #ffffff !important; border: 3px solid #cc7700 !important; }
 
-        /* Dialog Flag Options Panel Colors */
-        .flag-grid { width: 345px; max-height: 90vh; overflow-y: auto; }
-        .btn-flag-cardinal { background: #ff3b30 !important; color: #ffffff !important; border: 3px solid #ff3b30; }
-        .btn-flag-corner { background: #34c759 !important; color: #ffffff !important; border: 3px solid #34c759; } 
-        .btn-flag-hotel { grid-column: span 2; background: #5856d6 !important; color: #ffffff !important; border: 3px solid #5856d6; }
-
-        /* Caution Sub-Menu Color Styles */
+        /* Caution Menu Styles (Solid Yellow) */
         .caution-grid { width: 310px; }
-        .btn-caution-opt { background: #ffcc00 !important; color: #000000 !important; border: 3px solid #e6b800; } 
+        .btn-caution-opt { background: #ffcc00 !important; color: #000000 !important; border: 3px solid #ffcc00; } 
 
-        /* Police Sub-Menu Color Styles */
+        /* Police Menu Styles (Solid Blue) */
         .police-grid { width: 300px; }
-        .btn-police-opt { background: #007aff !important; color: #ffffff !important; border: 3px solid #0056b3; } 
+        .btn-police-opt { background: #007aff !important; color: #ffffff !important; border: 3px solid #007aff; } 
 
-        /* Cameras Overlay List View Panel Styles */
+        /* STREET VIEW CAMERAS OVERLAY MODAL WINDOW */
         .cam-list-grid { width: 350px; max-height: 85vh; overflow-y: auto; }
+        
         .btn-camera-select { 
             background: #34c759 !important; 
             color: #ffffff !important; 
@@ -92,27 +93,16 @@
             align-items: center; 
             justify-content: space-between; 
         }
-        .btn-config-cams { background: #007aff !important; color: white !important; border: 3px solid #0056b3 !important; padding: 12px !important; font-size: 1rem !important; }
         .btn-close-cam { background: #1c1c1e; color: white; width: 100%; margin-top: 12px; padding: 12px; border-radius: 8px; font-weight: 900; font-size: 1rem; border: none; cursor: pointer; text-transform: uppercase; } 
 
-        /* Camera Dashboard Layout Panel System */
-        .cam-config-grid { width: 360px; max-height: 90vh; display: flex; flex-direction: column; padding: 18px; }
-        .config-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
-        .config-tab-btn { flex: 1; padding: 10px 2px; font-weight: 900; font-size: 0.78rem; border-radius: 6px; border: 2px solid #d1d1d6; background: #e5e5ea; color: #1c1c1e; cursor: pointer; text-transform: uppercase; text-align: center; }
-        .config-tab-btn.active-conf-tab { background: #1c1c1e; color: white; border-color: #1c1c1e; }
-        .config-scroll-area { flex: 1; overflow-y: auto; max-height: 50vh; border: 2px solid #e5e5ea; border-radius: 8px; padding: 8px; background: #f2f2f7; margin-bottom: 10px; }
-        .camera-checkbox-row { display: flex; align-items: center; background: white; border: 1px solid #d1d1d6; padding: 12px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-weight: 700; color: #1c1c1e; font-size: 0.92rem; }
-        .camera-checkbox-row input { width: 22px; height: 22px; margin-right: 12px; cursor: pointer; }
-        .camera-counter-banner { font-size: 0.9rem; font-weight: 900; text-align: center; color: #1c1c1e; margin-bottom: 12px; background: #ffcc00; padding: 6px; border-radius: 6px; text-transform: uppercase; }
-
-        /* Suggestion Feed Form Element Styles */
+        /* SUGGESTION BOX WINDOW STYLES */
         .suggestion-grid { width: 320px; }
         .suggestion-input { width: 100%; height: 120px; padding: 12px; border-radius: 8px; border: 2px solid #a2a2a6; font-size: 1rem; resize: none; margin-bottom: 14px; font-family: inherit; }
         .suggestion-input:focus { border-color: #007aff; outline: none; }
         .btn-submit-sugg { background: #007aff; color: white; border: none; width: 100%; padding: 14px; border-radius: 8px; font-weight: 900; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; margin-bottom: 10px; }
-        .btn-cancel-sugg { background: #e5e5ea; color: #1c1c1e; border: none; width: 100%; padding: 10px; border-radius: 8px; font-weight: 900; font-size: 0.95rem; cursor: pointer; text-transform: uppercase; margin-bottom: 10px; }
+        .btn-cancel-sugg { background: #e5e5ea; color: #1c1c1e; border: none; width: 100%; padding: 10px; border-radius: 8px; font-weight: 900; font-size: 0.95rem; cursor: pointer; text-transform: uppercase; }
 
-        /* Logs Archive Output Box Panel */
+        /* CHAT LOG HISTORY WINDOW STYLES - FIXED TO MAINTAIN SOLID ALL-THE-TIME SYSTEM THEME COLORS */
         .chat-log-grid { width: 360px; max-height: 80vh; display: flex; flex-direction: column; padding: 16px; }
         .chat-tab-bar { display: flex; gap: 6px; margin-bottom: 12px; }
         .chat-tab-btn { flex: 1; padding: 12px 4px; font-weight: 900; font-size: 0.85rem; border-radius: 8px; cursor: pointer; text-transform: uppercase; text-align: center; border: 2px solid transparent; }
@@ -187,27 +177,20 @@
     <div id="camera-menu-pop" class="driver-modal cam-list-grid">
         <span class="modal-title">Street View Cameras</span>
         <div class="grid-options" id="camera-list-options">
-            </div>
-        <button class="btn-config-cams full-width-btn" onclick="openCameraConfigurator()" style="margin-top: 14px; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer;">⚙️ Manage App Cameras</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/BurrardCornwall4.htm')">Burrard and Cornwall</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/cambiebridge.htm')">Cambie Bridge</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/granvilleHoweOnRamp.htm')">Granville Bridge</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/granville70th.htm')">Granville and 70th Avenue</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/granvillerobson.htm')">Granville and Robson</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/hastings.htm')">Hastings and Boundary Rd.</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/transcanada01.htm')">HWY 1 and 1st Ave</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/knightMarineBridge.htm')">Knight Street Bridge</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/oak4.htm')">Oak and 70th</button>
+            <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/denman3.htm')">W Georgia and Denman st.</button>
+        </div>
+        
         <button class="btn-close-cam" onclick="backToUtilityMenu('camera-menu-pop')">Back</button>
     </div> 
-
-    <div id="camera-config-pop" class="driver-modal cam-config-grid">
-        <span class="modal-title">Pick Your Top 10 Cameras</span>
-        <div id="config-counter" class="camera-counter-banner">Selected: 0 / 10</div>
-        
-        <div class="config-tabs">
-            <button id="ctab-van" class="config-tab-btn active-conf-tab" onclick="switchConfigTab('vancouver')">Vancouver</button>
-            <button id="ctab-sur" class="config-tab-btn" onclick="switchConfigTab('regional')">Surrey & Rich.</button>
-            <button id="ctab-hwy" class="config-tab-btn" onclick="switchConfigTab('highways')">Hwys & Bridges</button>
-        </div>
-
-        <div id="config-scroll-target" class="config-scroll-area">
-            </div>
-
-        <button class="btn-submit-sugg" onclick="savePersonalizedCameraSelections()" style="background: #34c759;">Save Selection</button>
-        <button class="btn-cancel-sugg" onclick="cancelCameraConfiguring()">Cancel</button>
-    </div>
 
     <div id="flag-pop" class="driver-modal flag-grid">
         <span class="modal-title">Drop Flag Intersection</span>
@@ -304,51 +287,7 @@
         let activeMarkersLog = [];
         let activeChatLogTab = "Flag";
 
-        // =========================================================================================
-        // UPDATED REGIONAL WEB PORTAL MAP ROUTING ENGINE (FIX FOR CROSS-ORIGIN BLOCKING)
-        // =========================================================================================
-        const MASTER_CAMERA_CATALOG = [
-            // VANCOUVER TAB DATA
-            { id: "van_burrard", name: "Burrard & Cornwall", url: "https://trafficcams.vancouver.ca/BurrardCornwall4.htm", region: "vancouver" },
-            { id: "van_cambie", name: "Cambie Bridge", url: "https://trafficcams.vancouver.ca/cambiebridge.htm", region: "vancouver" },
-            { id: "van_granville", name: "Granville Bridge On-Ramp", url: "https://trafficcams.vancouver.ca/granvilleHoweOnRamp.htm", region: "vancouver" },
-            { id: "van_gran70", name: "Granville & 70th Ave", url: "https://trafficcams.vancouver.ca/granville70th.htm", region: "vancouver" },
-            { id: "van_granrob", name: "Granville & Robson", url: "https://trafficcams.vancouver.ca/granvillerobson.htm", region: "vancouver" },
-            { id: "van_hast", name: "Hastings & Boundary Rd", url: "https://trafficcams.vancouver.ca/hastings.htm", region: "vancouver" },
-            { id: "van_knight", name: "Knight St Bridge Appr.", url: "https://trafficcams.vancouver.ca/knightMarineBridge.htm", region: "vancouver" },
-            { id: "van_oak70", name: "Oak & 70th Ave", url: "https://trafficcams.vancouver.ca/oak4.htm", region: "vancouver" },
-            { id: "van_georgia", name: "W Georgia & Denman", url: "https://trafficcams.vancouver.ca/denman3.htm", region: "vancouver" },
-            { id: "van_broadway", name: "Broadway & Commercial", url: "https://trafficcams.vancouver.ca/commercialBroadway.htm", region: "vancouver" },
-            
-            // SURREY & RICHMOND NEIGHBORHOODS TAB DATA (SWITCHED TO WEB PORTALS TO BYPASS EMBED BLOCKS)
-            { id: "reg_surr104", name: "Surrey: 104 Ave & 152 St", url: "https://www.drivebc.ca/cameras/806", region: "regional" },
-            { id: "reg_surrking", name: "Surrey: King George & 72 Ave", url: "https://www.drivebc.ca/cameras/1031", region: "regional" },
-            { id: "reg_richno3", name: "Richmond: Hwy 99 & Westminster Hwy", url: "https://www.drivebc.ca/cameras/611", region: "regional" },
-            { id: "reg_richbridge", name: "Richmond: Knight St & Bridgeport", url: "https://www.drivebc.ca/cameras/1109", region: "regional" },
-            { id: "reg_burn_lougheed", name: "Burnaby: Lougheed & Willingdon", url: "https://www.drivebc.ca/cameras/479", region: "regional" },
-            { id: "reg_burn_kingsway", name: "Burnaby: Hwy 1 & Gaglardi", url: "https://www.drivebc.ca/cameras/485", region: "regional" },
-            
-            { id: "reg_portman_br", name: "Port Mann Bridge", url: "https://www.drivebc.ca/cameras/292", region: "regional" },
-            { id: "reg_hwy91_conn", name: "Hwy 91 Connector", url: "https://www.drivebc.ca/cameras/575", region: "regional" },
-            { id: "reg_hwy91_main", name: "Highway 91", url: "https://www.drivebc.ca/cameras/322", region: "regional" },
-            { id: "reg_hwy91_annacis", name: "Hwy 91 & Annacis Island", url: "https://www.drivebc.ca/cameras/780", region: "regional" },
-            { id: "reg_alexfraser_br", name: "Alex Fraser Bridge (Hwy 91)", url: "https://www.drivebc.ca/cameras/91", region: "regional" },
-            { id: "reg_hwy99_cambie", name: "Hwy 99 & Cambie Rd", url: "https://www.drivebc.ca/cameras/309", region: "regional" },
-            { id: "reg_taylor_way", name: "Taylor Way", url: "https://www.drivebc.ca/cameras/21", region: "regional" },
-            { id: "reg_steveston_hwy", name: "Steveston Hwy & Hwy 99", url: "https://www.drivebc.ca/cameras/29", region: "regional" },
-
-            // HIGHWAYS & CONNECTIONS TAB DATA
-            { id: "hwy_1_1st", name: "HWY 1 & 1st Ave", url: "https://trafficcams.vancouver.ca/transcanada01.htm", region: "highways" },
-            { id: "hwy_alex_fraser", name: "Alex Fraser Bridge", url: "https://www.drivebc.ca/cameras/92", region: "highways" },
-            { id: "hwy_massey", name: "Massey Tunnel (Hwy 99)", url: "https://www.drivebc.ca/cameras/29", region: "highways" },
-            { id: "hwy_ironworkers", name: "Ironworkers Second Narrows", url: "https://www.drivebc.ca/cameras/5", region: "highways" },
-            { id: "hwy_lionsgate", name: "Lions Gate Bridge", url: "https://www.drivebc.ca/cameras/20", region: "highways" },
-            { id: "hwy_port_mann", name: "Port Mann Bridge (Hwy 1)", url: "https://www.drivebc.ca/cameras/454", region: "highways" }
-        ];
-
-        let driverSelectedCameraIds = [];
-        let currentActiveConfigTab = "vancouver";
-
+        // Moving Yellow Taxi Icon
         const taxiIconStyle = L.divIcon({
             className: 'taxi-vector-icon',
             html: 'TAXI',
@@ -357,153 +296,8 @@
         }); 
 
         // =========================================================================================
-        // CAMERA CORE PROFILE MANAGEMENT PIPELINE
+        // NEW MENU OVERLAY ROUTING SELECTIONS
         // =========================================================================================
-        function initializeCameraDriverProfile() {
-            const savedProfile = localStorage.getItem('cab_companion_custom_cameras');
-            if (savedProfile) {
-                try {
-                    driverSelectedCameraIds = JSON.parse(savedProfile);
-                } catch (e) {
-                    loadDefaultCameraProfile();
-                }
-            } else {
-                loadDefaultCameraProfile();
-            }
-            renderMainCameraDashboardUI();
-        }
-
-        function loadDefaultCameraProfile() {
-            driverSelectedCameraIds = [
-                "van_burrard", "van_cambie", "van_granville", "van_gran70", 
-                "van_granrob", "van_hast", "hwy_1_1st", "van_knight", 
-                "van_oak70", "van_georgia"
-            ];
-        }
-
-        function renderMainCameraDashboardUI() {
-            const dashboardGrid = document.getElementById('camera-list-options');
-            dashboardGrid.innerHTML = "";
-
-            let matchingCount = 0;
-            MASTER_CAMERA_CATALOG.forEach(cam => {
-                if (driverSelectedCameraIds.includes(cam.id)) {
-                    matchingCount++;
-                    const btn = document.createElement('button');
-                    btn.className = "btn-camera-select full-width-btn";
-                    btn.innerHTML = `${cam.name} <span>➔</span>`;
-                    btn.onclick = function() {
-                        openLiveCameraTab(cam.url);
-                    };
-                    dashboardGrid.appendChild(btn);
-                }
-            });
-
-            if (matchingCount === 0) {
-                dashboardGrid.innerHTML = `<div style="grid-column:span 2; text-align:center; color:#8e8e93; font-weight:bold; padding:20px;">NO CAMERAS SAVED. PLEASE MANAGE PROFILE BELOW.</div>`;
-            }
-        }
-
-        function openCameraConfigurator() {
-            document.getElementById('camera-menu-pop').style.display = 'none';
-            showModal('camera-config-pop');
-            switchConfigTab(currentActiveConfigTab);
-        }
-
-        function switchConfigTab(tabName) {
-            currentActiveConfigTab = tabName;
-            document.getElementById('ctab-van').className = "config-tab-btn" + (tabName === 'vancouver' ? " active-conf-tab" : "");
-            document.getElementById('ctab-sur').className = "config-tab-btn" + (tabName === 'regional' ? " active-conf-tab" : "");
-            document.getElementById('ctab-hwy').className = "config-tab-btn" + (tabName === 'highways' ? " active-conf-tab" : "");
-            
-            renderConfigCheckboxes();
-        }
-
-        function renderConfigCheckboxes() {
-            const container = document.getElementById('config-scroll-target');
-            container.innerHTML = "";
-            
-            updateConfigCounterDisplay();
-
-            const filteredCameras = MASTER_CAMERA_CATALOG.filter(cam => cam.region === currentActiveConfigTab);
-
-            filteredCameras.forEach(cam => {
-                const row = document.createElement('div');
-                row.className = "camera-checkbox-row";
-                
-                const isChecked = driverSelectedCameraIds.includes(cam.id);
-                
-                row.innerHTML = `
-                    <input type="checkbox" id="chk_${cam.id}" ${isChecked ? 'checked' : ''}>
-                    <label for="chk_${cam.id}" style="cursor:pointer; flex:1;">${cam.name}</label>
-                `;
-
-                const checkbox = row.querySelector('input');
-                
-                row.onclick = function(e) {
-                    if(e.target !== checkbox) {
-                        checkbox.checked = !checkbox.checked;
-                    }
-                    handleCheckboxToggleLogic(cam.id, checkbox);
-                };
-
-                checkbox.onchange = function() {
-                    handleCheckboxToggleLogic(cam.id, checkbox);
-                };
-
-                container.appendChild(row);
-            });
-        }
-
-        function handleCheckboxToggleLogic(id, checkbox) {
-            if (checkbox.checked) {
-                if (driverSelectedCameraIds.length >= 10) {
-                    checkbox.checked = false;
-                    alert("Maximum limit reached. You can only display exactly 10 cameras at once.");
-                    return;
-                }
-                if (!driverSelectedCameraIds.includes(id)) {
-                    driverSelectedCameraIds.push(id);
-                }
-            } else {
-                driverSelectedCameraIds = driverSelectedCameraIds.filter(item => item !== id);
-            }
-            updateConfigCounterDisplay();
-        }
-
-        function updateConfigCounterDisplay() {
-            const counterBanner = document.getElementById('config-counter');
-            counterBanner.innerHTML = `Selected Dashboard Allocation: ${driverSelectedCameraIds.length} / 10`;
-            if (driverSelectedCameraIds.length === 10) {
-                counterBanner.style.background = "#34c759";
-                counterBanner.style.color = "white";
-            } else {
-                counterBanner.style.background = "#ffcc00";
-                counterBanner.style.color = "black";
-            }
-        }
-
-        function savePersonalizedCameraSelections() {
-            if (driverSelectedCameraIds.length === 0) {
-                alert("Please select at least one camera link before committing profile records.");
-                return;
-            }
-            localStorage.setItem('cab_companion_custom_cameras', JSON.stringify(driverSelectedCameraIds));
-            renderMainCameraDashboardUI();
-            document.getElementById('camera-config-pop').style.display = 'none';
-            showModal('camera-menu-pop');
-        }
-
-        function cancelCameraConfiguring() {
-            document.getElementById('camera-config-pop').style.display = 'none';
-            initializeCameraDriverProfile(); 
-            showModal('camera-menu-pop');
-        }
-
-        // Run Profile initialization on bootstrap script runtime sequence
-        initializeCameraDriverProfile();
-
-        // Menu overlays routing triggers
         function openCautionSelectionFromMenu() {
             hideModals();
             showModal('caution-type-pop');
@@ -511,13 +305,8 @@
 
         function openCamerasFromMenu() {
             hideModals();
-            renderMainCameraDashboardUI();
             showModal('camera-menu-pop');
         }
-
-        function openLiveCameraTab(targetUrl) {
-            window.open(targetUrl, '_blank');
-        } 
 
         function triggerReplayFromMenu() {
             hideModals();
@@ -538,6 +327,17 @@
             document.getElementById(currentModalId).style.display = 'none';
             showModal('utility-menu-pop');
         }
+
+        // =========================================================================================
+        // CAMERA ACTION CONTROLLER (NEW TAB BYPASS MECHANISM)
+        // =========================================================================================
+        function openCameraListMenu() {
+            showModal('camera-menu-pop');
+        } 
+
+        function openLiveCameraTab(targetUrl) {
+            window.open(targetUrl, '_blank');
+        } 
 
         // GEOLOCATION ENGINE
         map.locate({ watch: true, enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }); 
@@ -568,6 +368,7 @@
             btn.className = "util-circle";
             btn.innerHTML = "MAP<br>FREE";
         }); 
+
 
         // =========================================================================================
         // REVERSE GEOLOCATION ENGINE
@@ -638,6 +439,7 @@
             }
         } 
 
+
         // =========================================================================================
         // DISPATCH PASSENGER FLAG MARKER
         // =========================================================================================
@@ -665,6 +467,7 @@
                     displayString = `Hotel Dispatch Flag waiting at ${completeAddress}`;
                 }
 
+                // Append item entry right into tracking system
                 activeMarkersLog.push({
                     category: 'Flag',
                     timestamp: Date.now(),
@@ -690,8 +493,9 @@
             });
         } 
 
+
         // =========================================================================================
-        // CAUTION LOGIC SUBROUTINES
+        // UPDATED CAUTION LOGIC SUBROUTINES WITH CUSTOM ICON DROP RULES
         // =========================================================================================
         function selectCautionType(type) {
             chosenCautionType = type;
@@ -745,6 +549,7 @@
                 const dynamicMarker = L.marker(targetPos, { icon: cautionDivIcon }).addTo(map); 
                 const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName; 
 
+                // Append item entry right into tracking system
                 activeMarkersLog.push({
                     category: 'Caution',
                     timestamp: Date.now(),
@@ -771,6 +576,7 @@
                 }, 1200000);
             });
         } 
+
 
         // =========================================================================================
         // POLICE PIPELINE SNIPPET
@@ -800,6 +606,7 @@
                 const officerMarker = L.marker(targetPos, { icon: policeIcon }).addTo(map);
                 const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName; 
 
+                // Append item entry right into tracking system
                 activeMarkersLog.push({
                     category: 'Police',
                     timestamp: Date.now(),
@@ -824,8 +631,9 @@
             });
         } 
 
+
         // =========================================================================================
-        // AUDIO HOUSENUMBER DIGIT CONVERTER
+        // AUDIO ADDRESS CONVERTER
         // =========================================================================================
         function breakHouseNumbersIntoCouples(numberStr) {
             if (!numberStr || isNaN(numberStr)) return numberStr;
@@ -848,6 +656,7 @@
 
             return numberStr;
         } 
+
 
         // =========================================================================================
         // CENTRAL TEXT-TO-SPEECH BROADCAST MACHINE
@@ -896,6 +705,10 @@
             }, 1500);
         } 
 
+
+        // =========================================================================================
+        // INSTANT AUDIO REPLAY
+        // =========================================================================================
         function replayLastAudioNarration() {
             if (!lastSpokenSpeechString) return;
             
@@ -909,6 +722,10 @@
             }, 200);
         }
 
+
+        // =========================================================================================
+        // DRIVER SUGGESTION HANDLING SUBROUTINE
+        // =========================================================================================
         function submitDriverSuggestion() {
             const field = document.getElementById('driver-suggestion-text');
             const note = field.value.trim();
@@ -929,8 +746,9 @@
             alert("Thank you! Your suggestion has been recorded.");
         }
 
+
         // =========================================================================================
-        // CHAT ENGINE AND LOGS LIST LOGIC
+        // CHAT ENGINE AND HISTORY NAVIGATION LOGIC PIPELINE
         // =========================================================================================
         function openChatLogHistoryMenu() {
             showModal('chat-log-pop');
@@ -1037,6 +855,7 @@
                 container.appendChild(logCard);
             });
         }
+
 
         // =========================================================================================
         // SCREEN ANTI-BLACKOUT WAKELOCK
