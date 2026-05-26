@@ -11,6 +11,42 @@
         
         #map { width: 100%; height: 100%; position: absolute; top: 0; bottom: 0; z-index: 1; }
         
+        /* Dynamic Auto-Hiding Zoom Control Box Wrapper Placement Rules */
+        .dynamic-zoom-container {
+            position: absolute;
+            top: 115px; /* Safely nested between Police Button and Right Utility Circle */
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease-in-out;
+        }
+        .dynamic-zoom-container.zoom-visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .custom-zoom-btn {
+            width: 50px;
+            height: 50px;
+            background: #ffffff;
+            border: 3px solid #1c1c1e;
+            color: #1c1c1e;
+            font-size: 1.8rem;
+            font-weight: 900;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .custom-zoom-btn:active {
+            background: #ffd100;
+        }
+
         /* Top HUD Action Buttons - Repositioned to Corners */
         .top-actions { position: absolute; top: 20px; left: 0; right: 0; padding: 0 20px; display: flex; justify-content: space-between; z-index: 1000; pointer-events: none; }
         .action-btn { pointer-events: auto; width: 82px; height: 82px; border-radius: 50%; border: 4px solid #fff; color: white; font-weight: bold; font-size: 0.82rem; cursor: pointer; box-shadow: 0 6px 12px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
@@ -138,6 +174,11 @@
 <body> 
 
     <div id="map"></div> 
+
+    <div id="dynamic-zoom-box" class="dynamic-zoom-container">
+        <button class="custom-zoom-btn" onclick="executeManualZoomAction(1)">+</button>
+        <button class="custom-zoom-btn" onclick="executeManualZoomAction(-1)">-</button>
+    </div>
 
     <div class="top-actions">
         <button class="action-btn btn-flag" onclick="showModal('flag-pop')">🔴<br><span>FLAG</span></button>
@@ -283,8 +324,20 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // Core Status States
+        let vehiclePos = null;
+        let lastGeocodedPos = null;
+        let vehicleMarker = null;
+        let trackVehicleView = true; 
+        let audioMuted = false;
+        let wakeLockToken = null;
+        
+        // PERSISTENT MANUAL DRIVER ZOOM PREFERENCE
+        let preferredZoomDepth = 17; 
+        let zoomVisibilityTimeout = null;
+
         // =========================================================================================
-        // MAP CORE INITIALIZER
+        // MAP CORE INITIALIZER WITH BRIGHT HIGH-VISIBILITY STREET TILES
         // =========================================================================================
         const map = L.map('map', { 
             zoomControl: false, 
@@ -293,17 +346,12 @@
             touchZoom: true,
             doubleClickZoom: true,
             scrollWheelZoom: true
-        }).setView([49.2611, -123.1281], 16); 
+        }).setView([49.2611, -123.1281], preferredZoomDepth); 
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); 
-
-        // Core Status States
-        let vehiclePos = null;
-        let lastGeocodedPos = null;
-        let vehicleMarker = null;
-        let trackVehicleView = true; 
-        let audioMuted = false;
-        let wakeLockToken = null;
+        // Swapped to high-visibility bright street tiles (CartoDB Voyager) to color major arterials clearly
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO'
+        }).addTo(map); 
 
         // Selection variables
         let chosenCautionType = "";
@@ -333,14 +381,47 @@
         // Set default time values for input on page load
         window.addEventListener('DOMContentLoaded', () => {
             const now = new Date();
-            // Set default picker display target to 8 hours from now
             now.setHours(now.getHours() + 8);
             const defaultTimeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
             document.getElementById('shift-end-time-input').value = defaultTimeStr;
             
-            // Require initialization blocking selection popups
             document.getElementById('screen-overlay').style.display = 'block';
             document.getElementById('shift-scheduler-pop').style.display = 'block';
+        });
+
+        // =========================================================================================
+        // AUTO-HIDING ZOOM INTERACTION ENGINE
+        // =========================================================================================
+        function showZoomControlsTemporarily() {
+            if (!isShiftActive) return;
+            const zoomBox = document.getElementById('dynamic-zoom-box');
+            zoomBox.classList.add('zoom-visible');
+            
+            clearTimeout(zoomVisibilityTimeout);
+            zoomVisibilityTimeout = setTimeout(() => {
+                zoomBox.classList.remove('zoom-visible');
+            }, 4000); // Fades away smoothly after 4 seconds of inactivity
+        }
+
+        function executeManualZoomAction(direction) {
+            showZoomControlsTemporarily();
+            let currentZoom = map.getZoom();
+            let targetZoom = currentZoom + direction;
+            
+            if (targetZoom >= map.getMinZoom() && targetZoom <= map.getMaxZoom()) {
+                preferredZoomDepth = targetZoom; // Update preferred baseline depth
+                map.setZoom(targetZoom);
+            }
+        }
+
+        // Event hooks to trigger zoom UI when map manipulation occurs
+        map.on('zoomstart touchmove movestart pinchstart', function() {
+            showZoomControlsTemporarily();
+        });
+
+        map.on('zoomend', function() {
+            // Safe tracking lock logic context catch
+            preferredZoomDepth = map.getZoom();
         });
 
         // =========================================================================================
@@ -357,7 +438,6 @@
             const now = new Date();
             let targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0);
 
-            // If target time is earlier than current time, assume it means tomorrow morning (cross-midnight shifts)
             if (targetDate <= now) {
                 targetDate.setDate(targetDate.getDate() + 1);
             }
@@ -365,13 +445,9 @@
             targetShiftEndTimestamp = targetDate.getTime();
             isShiftActive = true;
 
-            // Clear any active previous timers if they exist
             if (shiftMonitoringInterval) clearInterval(shiftMonitoringInterval);
-
-            // Start clock polling tracking check loop updates every single second
             shiftMonitoringInterval = setInterval(checkShiftTimeExpirationStatus, 1000);
 
-            // Close the initiation modal setup sequence safely
             document.getElementById('shift-scheduler-pop').style.display = 'none';
             document.getElementById('screen-overlay').style.display = 'none';
         }
@@ -389,7 +465,6 @@
             isShiftActive = false;
             if (shiftMonitoringInterval) clearInterval(shiftMonitoringInterval);
             
-            // 1. Permanently mute the voice broadcast machine engine
             audioMuted = true;
             const btn = document.getElementById('mute-toggle-btn');
             if (btn) {
@@ -397,18 +472,14 @@
                 btn.innerHTML = "AUDIO<br>MUTED";
             }
 
-            // 2. Clear out TTS pipelines immediately
             if (window.speechSynthesis) {
                 window.speechSynthesis.cancel();
             }
 
-            // 3. Close open operational selection view screen layers
             hideModals();
-
-            // 4. Drop map engine position tracking watch tasks
             trackVehicleView = false;
+            document.getElementById('dynamic-zoom-box').classList.remove('zoom-visible');
 
-            // 5. Throw absolute blackout control mask panel overlay over everything
             document.getElementById('shift-complete-screen').style.display = 'flex';
             console.log("SHIFT TIMER TERMINATED: Application context isolated and signed off.");
         }
@@ -422,7 +493,6 @@
                 btn.innerHTML = "AUDIO<br>ON";
             }
             
-            // Re-open initiation input choice interface workflow dialog box
             document.getElementById('screen-overlay').style.display = 'block';
             document.getElementById('shift-scheduler-pop').style.display = 'block';
         }
@@ -478,19 +548,19 @@
             vehiclePos = e.latlng;
             if (!vehicleMarker) {
                 vehicleMarker = L.marker(e.latlng, { icon: taxiIconStyle }).addTo(map);
-                map.setView(e.latlng, 17);
+                map.setView(e.latlng, preferredZoomDepth);
             } else {
                 vehicleMarker.setLatLng(e.latlng);
             } 
             if (trackVehicleView) {
-                map.setView(e.latlng, 17);
+                map.setView(e.latlng, preferredZoomDepth);
             } 
             fetchAddressFromCoordinates(e.latlng);
         }); 
 
         setInterval(() => {
             if (trackVehicleView && vehiclePos) {
-                map.setView(vehiclePos, 17);
+                map.setView(vehiclePos, preferredZoomDepth);
             }
         }, 2000);
         
@@ -540,7 +610,6 @@
         } 
 
         function showModal(id) {
-            // Block normal interaction screens if driver has expired active session tasks
             if (!isShiftActive && id !== 'shift-scheduler-pop') return;
             
             document.getElementById('screen-overlay').style.display = 'block';
@@ -548,7 +617,6 @@
         } 
 
         function hideModals() {
-            // Block removal of overlay layout profiles if tracking activation setups remain undone
             if (!isShiftActive) return;
             
             document.getElementById('screen-overlay').style.display = 'none';
@@ -562,7 +630,7 @@
             btn.className = "util-circle active-center";
             btn.innerHTML = "MAP<br>LOCKED";
             if (vehiclePos) {
-                map.setView(vehiclePos, 17);
+                map.setView(vehiclePos, preferredZoomDepth);
             }
         } 
 
@@ -608,7 +676,6 @@
                     displayString = `Hotel Dispatch Flag waiting at ${completeAddress}`;
                 }
 
-                // Append item entry right into tracking system
                 activeMarkersLog.push({
                     category: 'Flag',
                     timestamp: Date.now(),
@@ -692,7 +759,6 @@
                 const dynamicMarker = L.marker(targetPos, { icon: cautionDivIcon }).addTo(map); 
                 const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName; 
 
-                // Append item entry right into tracking system
                 activeMarkersLog.push({
                     category: 'Caution',
                     timestamp: Date.now(),
@@ -751,7 +817,6 @@
                 const officerMarker = L.marker(targetPos, { icon: policeIcon }).addTo(map);
                 const completeAddress = currentAddressData.houseNumber ? `${currentAddressData.houseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName; 
 
-                // Append item entry right into tracking system
                 activeMarkersLog.push({
                     category: 'Police',
                     timestamp: Date.now(),
@@ -807,7 +872,6 @@
         // CENTRAL TEXT-TO-SPEECH BROADCAST MACHINE
         // =========================================================================================
         function dispatchAudioNarration(category, payload) {
-            // Absolute blocker if shift limit reached or audio toggled down
             if (!isShiftActive || audioMuted) return; 
 
             const spokenHouseNumber = breakHouseNumbersIntoCouples(currentAddressData.houseNumber);
@@ -946,7 +1010,7 @@
                     centerBtn.className = "util-circle";
                     centerBtn.innerHTML = "MAP<br>FREE";
                     
-                    map.setView(item.latlng, 17);
+                    map.setView(item.latlng, preferredZoomDepth);
                     
                     let customHistoryIcon;
                     let popupContentHtml = "";
