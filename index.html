@@ -120,6 +120,19 @@
         .chat-log-item:active { background: #e5e5ea; }
         .chat-log-item span.time-badge { font-size: 0.72rem; color: #8e8e93; font-weight: bold; display: block; margin-bottom: 3px; text-transform: uppercase; }
         .chat-empty-msg { text-align: center; color: #8e8e93; font-weight: bold; font-size: 0.95rem; padding-top: 40px; text-transform: uppercase; }
+
+        /* SHIFT SCHEDULER POPUP STYLES */
+        .shift-modal-grid { width: 330px; }
+        .shift-time-picker { width: 100%; padding: 14px; font-size: 1.4rem; font-weight: 900; text-align: center; border-radius: 10px; border: 3px solid #1c1c1e; margin: 15px 0; font-family: inherit; color: #1c1c1e; background: #f2f2f7; }
+        .btn-confirm-shift { background: #34c759; color: white; border: none; width: 100%; padding: 16px; border-radius: 12px; font-weight: 900; font-size: 1.2rem; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        
+        /* BLACKOUT SCREEN SIGN OFF STATUS OVERLAY */
+        #shift-complete-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111111; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .complete-card { background: #ffffff; border: 5px solid #ffd100; border-radius: 24px; padding: 35px 25px; max-width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+        .complete-icon { font-size: 4rem; margin-bottom: 15px; }
+        .complete-title { font-size: 1.8rem; font-weight: 900; color: #1c1c1e; margin-bottom: 10px; text-transform: uppercase; }
+        .complete-desc { font-size: 1.1rem; color: #48484a; font-weight: bold; line-height: 1.4; margin-bottom: 25px; }
+        .btn-restart-app { background: #1c1c1e; color: #ffd100; border: 3px solid #ffd100; padding: 14px 28px; font-weight: 900; font-size: 1.1rem; border-radius: 10px; cursor: pointer; text-transform: uppercase; }
     </style>
 </head>
 <body> 
@@ -143,6 +156,13 @@
     </div> 
 
     <div id="screen-overlay" class="modal-overlay" onclick="hideModals()"></div> 
+
+    <div id="shift-scheduler-pop" class="driver-modal shift-modal-grid" style="display: block;">
+        <span class="modal-title">Shift Setup</span>
+        <div style="text-align: center; font-weight: 900; color: #48484a; font-size: 0.95rem; text-transform: uppercase;">What time does your shift end?</div>
+        <input type="time" id="shift-end-time-input" class="shift-time-picker">
+        <button class="btn-confirm-shift" onclick="initializeDriverShiftTimer()">Go On Duty</button>
+    </div>
 
     <div id="utility-menu-pop" class="driver-modal utility-menu-grid">
         <span class="modal-title">Utility Panel</span>
@@ -252,6 +272,15 @@
         </div>
     </div> 
 
+    <div id="shift-complete-screen">
+        <div class="complete-card">
+            <div class="complete-icon">🏁</div>
+            <div class="complete-title">Shift Completed</div>
+            <div class="complete-desc">You have been signed off. The application is shut down and all audio updates are disabled. Have a safe drive home!</div>
+            <button class="btn-restart-app" onclick="restartAppSession()">Start New Shift</button>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // =========================================================================================
@@ -288,6 +317,11 @@
         let activeMarkersLog = [];
         let activeChatLogTab = "Flag";
 
+        // AUTOMATED SHIFT MANAGER CONTEXT REFERENCES
+        let targetShiftEndTimestamp = null;
+        let shiftMonitoringInterval = null;
+        let isShiftActive = false;
+
         // Moving Yellow Taxi Icon
         const taxiIconStyle = L.divIcon({
             className: 'taxi-vector-icon',
@@ -295,6 +329,103 @@
             iconSize: [26, 26],
             iconAnchor: [13, 13]
         }); 
+
+        // Set default time values for input on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const now = new Date();
+            // Set default picker display target to 8 hours from now
+            now.setHours(now.getHours() + 8);
+            const defaultTimeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('shift-end-time-input').value = defaultTimeStr;
+            
+            // Require initialization blocking selection popups
+            document.getElementById('screen-overlay').style.display = 'block';
+            document.getElementById('shift-scheduler-pop').style.display = 'block';
+        });
+
+        // =========================================================================================
+        // AUTOMATED SHIFT SCHEDULER CONTROLLER ENGINE
+        // =========================================================================================
+        function initializeDriverShiftTimer() {
+            const timeInputValue = document.getElementById('shift-end-time-input').value;
+            if (!timeInputValue) {
+                alert("PLEASE SELECT A VALID SHIFT END TIME.");
+                return;
+            }
+
+            const [hours, minutes] = timeInputValue.split(':').map(Number);
+            const now = new Date();
+            let targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0);
+
+            // If target time is earlier than current time, assume it means tomorrow morning (cross-midnight shifts)
+            if (targetDate <= now) {
+                targetDate.setDate(targetDate.getDate() + 1);
+            }
+
+            targetShiftEndTimestamp = targetDate.getTime();
+            isShiftActive = true;
+
+            // Clear any active previous timers if they exist
+            if (shiftMonitoringInterval) clearInterval(shiftMonitoringInterval);
+
+            // Start clock polling tracking check loop updates every single second
+            shiftMonitoringInterval = setInterval(checkShiftTimeExpirationStatus, 1000);
+
+            // Close the initiation modal setup sequence safely
+            document.getElementById('shift-scheduler-pop').style.display = 'none';
+            document.getElementById('screen-overlay').style.display = 'none';
+        }
+
+        function checkShiftTimeExpirationStatus() {
+            if (!isShiftActive || !targetShiftEndTimestamp) return;
+
+            const currentTimestamp = Date.now();
+            if (currentTimestamp >= targetShiftEndTimestamp) {
+                shutDownActiveAppSession();
+            }
+        }
+
+        function shutDownActiveAppSession() {
+            isShiftActive = false;
+            if (shiftMonitoringInterval) clearInterval(shiftMonitoringInterval);
+            
+            // 1. Permanently mute the voice broadcast machine engine
+            audioMuted = true;
+            const btn = document.getElementById('mute-toggle-btn');
+            if (btn) {
+                btn.className = "util-circle active-mute";
+                btn.innerHTML = "AUDIO<br>MUTED";
+            }
+
+            // 2. Clear out TTS pipelines immediately
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+
+            // 3. Close open operational selection view screen layers
+            hideModals();
+
+            // 4. Drop map engine position tracking watch tasks
+            trackVehicleView = false;
+
+            // 5. Throw absolute blackout control mask panel overlay over everything
+            document.getElementById('shift-complete-screen').style.display = 'flex';
+            console.log("SHIFT TIMER TERMINATED: Application context isolated and signed off.");
+        }
+
+        function restartAppSession() {
+            document.getElementById('shift-complete-screen').style.display = 'none';
+            audioMuted = false;
+            const btn = document.getElementById('mute-toggle-btn');
+            if (btn) {
+                btn.className = "util-circle";
+                btn.innerHTML = "AUDIO<br>ON";
+            }
+            
+            // Re-open initiation input choice interface workflow dialog box
+            document.getElementById('screen-overlay').style.display = 'block';
+            document.getElementById('shift-scheduler-pop').style.display = 'block';
+        }
 
         // =========================================================================================
         // NEW MENU OVERLAY ROUTING SELECTIONS
@@ -409,16 +540,23 @@
         } 
 
         function showModal(id) {
+            // Block normal interaction screens if driver has expired active session tasks
+            if (!isShiftActive && id !== 'shift-scheduler-pop') return;
+            
             document.getElementById('screen-overlay').style.display = 'block';
             document.getElementById(id).style.display = 'block';
         } 
 
         function hideModals() {
+            // Block removal of overlay layout profiles if tracking activation setups remain undone
+            if (!isShiftActive) return;
+            
             document.getElementById('screen-overlay').style.display = 'none';
             document.querySelectorAll('.driver-modal').forEach(m => m.style.display = 'none');
         } 
 
         function handleRecenter() {
+            if (!isShiftActive) return;
             trackVehicleView = true;
             const btn = document.getElementById('lock-center-btn');
             btn.className = "util-circle active-center";
@@ -429,6 +567,7 @@
         } 
 
         function handleMuteToggle() {
+            if (!isShiftActive) return;
             audioMuted = !audioMuted;
             const btn = document.getElementById('mute-toggle-btn');
             if(audioMuted) {
@@ -445,6 +584,7 @@
         // DISPATCH PASSENGER FLAG MARKER
         // =========================================================================================
         function dropFlagDirect(selectionValue) {
+            if (!isShiftActive) return;
             hideModals(); 
             if (!vehiclePos) return; 
 
@@ -499,12 +639,14 @@
         // UPDATED CAUTION LOGIC SUBROUTINES WITH CUSTOM ICON DROP RULES
         // =========================================================================================
         function selectCautionType(type) {
+            if (!isShiftActive) return;
             chosenCautionType = type;
             hideModals();
             showModal('caution-dir-pop');
         } 
 
         function dropCautionMarker(directionValue) {
+            if (!isShiftActive) return;
             hideModals(); 
             if (!vehiclePos) return; 
 
@@ -583,12 +725,14 @@
         // POLICE PIPELINE SNIPPET
         // =========================================================================================
         function selectPoliceType(type) {
+            if (!isShiftActive) return;
             chosenPoliceType = type.toLowerCase().trim();
             hideModals();
             showModal('police-dir-pop');
         } 
 
         function dropPoliceMarker(directionValue) {
+            if (!isShiftActive) return;
             hideModals(); 
             if (!vehiclePos) return; 
 
@@ -663,6 +807,9 @@
         // CENTRAL TEXT-TO-SPEECH BROADCAST MACHINE
         // =========================================================================================
         function dispatchAudioNarration(category, payload) {
+            // Absolute blocker if shift limit reached or audio toggled down
+            if (!isShiftActive || audioMuted) return; 
+
             const spokenHouseNumber = breakHouseNumbersIntoCouples(currentAddressData.houseNumber);
             const addressAudioString = spokenHouseNumber ? `${spokenHouseNumber} ${currentAddressData.streetName}` : currentAddressData.streetName;
             
@@ -694,8 +841,6 @@
 
             lastSpokenSpeechString = finalSpeechString;
 
-            if (audioMuted) return; 
-
             const clearHardwareBuffer = new SpeechSynthesisUtterance("");
             window.speechSynthesis.speak(clearHardwareBuffer); 
 
@@ -711,7 +856,7 @@
         // INSTANT AUDIO REPLAY
         // =========================================================================================
         function replayLastAudioNarration() {
-            if (!lastSpokenSpeechString) return;
+            if (!isShiftActive || !lastSpokenSpeechString) return;
             
             const clearHardwareBuffer = new SpeechSynthesisUtterance("");
             window.speechSynthesis.speak(clearHardwareBuffer); 
@@ -728,6 +873,7 @@
         // DRIVER SUGGESTION HANDLING SUBROUTINE
         // =========================================================================================
         function submitDriverSuggestion() {
+            if (!isShiftActive) return;
             const field = document.getElementById('driver-suggestion-text');
             const note = field.value.trim();
             
@@ -752,11 +898,13 @@
         // CHAT ENGINE AND HISTORY NAVIGATION LOGIC PIPELINE
         // =========================================================================================
         function openChatLogHistoryMenu() {
+            if (!isShiftActive) return;
             showModal('chat-log-pop');
             switchChatLogTab(activeChatLogTab);
         }
 
         function switchChatLogTab(categoryTab) {
+            if (!isShiftActive) return;
             activeChatLogTab = categoryTab;
             
             document.getElementById('tab-btn-flag').className = "chat-tab-btn" + (categoryTab === 'Flag' ? " active-tab-flags" : "");
@@ -790,6 +938,7 @@
                 logCard.className = "chat-log-item";
                 
                 logCard.onclick = function() {
+                    if (!isShiftActive) return;
                     hideModals();
                     trackVehicleView = false;
                     
