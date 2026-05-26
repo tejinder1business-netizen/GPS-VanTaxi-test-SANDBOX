@@ -65,7 +65,7 @@
 
         /* BRIGHT THEMED UTILITY PANEL MENU BUTTONS */
         .utility-menu-grid { width: 340px; }
-        .btn-caution-menu { background: #ffcc00 !important; color: #000000 !important; border: 3px solid #e6b800 !important; }
+        .btn-caution-menu { background: #ffcc00 !important; color: #000000 !important; border: 3px solid #e6b800 !important; font-weight: 900 !important; }
         .btn-cameras-menu { background: #34c759 !important; color: #ffffff !important; border: 3px solid #28a745 !important; }
         .btn-replay-menu { background: #5856d6 !important; color: #ffffff !important; border: 3px solid #433fa7 !important; }
         .btn-logs-menu { background: #00c7be !important; color: #ffffff !important; border: 3px solid #00a39c !important; }
@@ -147,10 +147,10 @@
     <div id="utility-menu-pop" class="driver-modal utility-menu-grid">
         <span class="modal-title">Utility Panel</span>
         <div class="grid-options">
-            <button class="btn-caution-menu full-width-btn" onclick="openCautionSelectionFromMenu()">⚠️ CAUTION ENGINE</button>
-            <button class="btn-cameras-menu full-width-btn" onclick="openCamerasFromMenu()">🎥 TRAFFIC CAMERAS</button>
-            <button class="btn-replay-menu full-width-btn" onclick="triggerReplayFromMenu()">🔊 REPLAY LAST MSG</button>
-            <button class="btn-logs-menu full-width-btn" onclick="openChatLogHistoryMenuFromMenu()">💬 LIVE ACTIVE LOGS</button>
+            <button class="btn-caution-menu full-width-btn" onclick="openCautionSelectionFromMenu()">👷 HAZARD</button>
+            <button class="btn-cameras-menu full-width-btn" onclick="openCamerasFromMenu()">📷 CAMERAS</button>
+            <button class="btn-replay-menu full-width-btn" onclick="triggerReplayFromMenu()">🔊 REPEAT</button>
+            <button class="btn-logs-menu full-width-btn" onclick="openChatLogHistoryMenuFromMenu()">💬 LOG BOOK</button>
             <button class="btn-feedback-menu full-width-btn" onclick="openFeedbackFromMenu()">📝 DRIVER FEEDBACK</button>
         </div>
         <button class="btn-close-cam" onclick="hideModals()">Close Menu</button>
@@ -178,7 +178,6 @@
         <span class="modal-title">Street View Cameras</span>
         <div class="grid-options" id="camera-list-options">
             <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/granvillehastings.htm')">Pan Pacific</button>
-            
             <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/BurrardCornwall4.htm')">Burrard and Cornwall</button>
             <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/cambiebridge.htm')">Cambie Bridge</button>
             <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/granvilleHoweOnRamp.htm')">Granville Bridge</button>
@@ -191,7 +190,6 @@
             <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/denman3.htm')">W Georgia and Denman st.</button>
             <button class="btn-camera-select full-width-btn" onclick="openLiveCameraTab('https://trafficcams.vancouver.ca/CambieMarine.htm')">Cambie and Marine</button>
         </div>
-        
         <button class="btn-close-cam" onclick="backToUtilityMenu('camera-menu-pop')">Back</button>
     </div> 
 
@@ -230,7 +228,7 @@
             <button class="btn-caution-opt" onclick="dropCautionMarker('Southbound')">South</button>
             <button class="btn-caution-opt" onclick="dropCautionMarker('Eastbound')">East</button>
             <button class="btn-caution-opt" onclick="dropCautionMarker('Westbound')">West</button>
-            <button class="btn-caution-opt full-width-btn" onclick="dropCautionMarker('All Directions')">All Directions</button>
+            <button class="btn-caution-opt fill-width-btn" onclick="dropCautionMarker('All Directions')">All Directions</button>
         </div>
     </div> 
 
@@ -250,7 +248,7 @@
             <button class="btn-police-opt" onclick="dropPoliceMarker('Southbound')">South</button>
             <button class="btn-police-opt" onclick="dropPoliceMarker('Eastbound')">East</button>
             <button class="btn-police-opt" onclick="dropPoliceMarker('Westbound')">West</button>
-            <button class="btn-police-opt full-width-btn" onclick="dropPoliceMarker('All Directions')">All Directions</button>
+            <button class="btn-police-opt fill-width-btn" onclick="dropPoliceMarker('All Directions')">All Directions</button>
         </div>
     </div> 
 
