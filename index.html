@@ -182,19 +182,24 @@
         .btn-restart-app { background: #1c1c1e; color: #ffd100; border: 3px solid #ffd100; padding: 14px 28px; font-weight: 900; font-size: 1.1rem; border-radius: 10px; cursor: pointer; text-transform: uppercase; }
 
         /* NEW DRIVER MATCHING ENGINE GRAPHICAL INTERFACE WORKSPACE */
-        .matching-grid { width: 360px; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; padding: 16px; }
+        .matching-grid { width: 375px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; padding: 16px; }
         .match-card-info { background: #f2f2f7; border: 2px solid #af52de; border-radius: 10px; padding: 10px; font-size: 0.85rem; color: #1c1c1e; margin-bottom: 12px; font-weight: 700; }
         .match-input-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; justify-content: space-between; }
         .match-input-row label { font-weight: 900; font-size: 0.82rem; color: #1c1c1e; text-transform: uppercase; }
         .match-calendar-input { padding: 8px; border: 2px solid #1c1c1e; border-radius: 6px; font-weight: 900; font-family: inherit; font-size: 0.9rem; }
         .match-select-shift { padding: 8px; border: 2px solid #1c1c1e; border-radius: 6px; font-weight: 900; font-family: inherit; background: #fff; font-size: 0.9rem; }
         .btn-log-availability { background: #af52de; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 900; font-size: 1rem; cursor: pointer; text-transform: uppercase; margin-bottom: 14px; width: 100%; box-shadow: 0 3px 6px rgba(0,0,0,0.15); }
-        .match-list-heading { font-size: 0.9rem; font-weight: 900; color: #1c1c1e; text-transform: uppercase; border-bottom: 2px solid #af52de; padding-bottom: 4px; margin-bottom: 8px; text-align: left; }
-        .matching-entries-scroller { max-height: 220px; overflow-y: auto; background: #fafafa; border: 2px dashed #d1d1d6; border-radius: 8px; padding: 6px; margin-bottom: 10px; }
-        .match-item-row { background: white; border: 2px solid #e5e5ea; border-radius: 6px; padding: 8px; margin-bottom: 6px; font-size: 0.85rem; font-weight: 700; color: #1c1c1e; text-align: left; display: flex; flex-direction: column; gap: 3px; position: relative; }
+        
+        /* Redesigned Dual List Columns Layout Frameworks */
+        .dual-list-layout-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
+        .match-column-container { display: flex; flex-direction: column; }
+        .match-list-heading { font-size: 0.78rem; font-weight: 900; color: #1c1c1e; text-transform: uppercase; border-bottom: 2px solid #af52de; padding-bottom: 4px; margin-bottom: 8px; text-align: left; letter-spacing: -0.3px; }
+        .matching-entries-scroller { height: 200px; overflow-y: auto; background: #fafafa; border: 2px dashed #d1d1d6; border-radius: 8px; padding: 6px; margin-bottom: 10px; }
+        
+        .match-item-row { background: white; border: 2px solid #e5e5ea; border-radius: 6px; padding: 8px; margin-bottom: 6px; font-size: 0.82rem; font-weight: 700; color: #1c1c1e; text-align: left; display: flex; flex-direction: column; gap: 3px; position: relative; }
         .match-item-row.is-perfect-match { border-color: #34c759; background: #f2fdf4; }
-        .match-badge { position: absolute; top: 8px; right: 8px; background: #34c759; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; font-weight: 900; text-transform: uppercase; animation: pulse 2s infinite; }
-        .match-call-btn { display: inline-flex; align-items: center; justify-content: center; background: #007aff; color: white; text-decoration: none; font-weight: 900; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; width: max-content; margin-top: 4px; text-transform: uppercase; }
+        .match-badge { position: absolute; top: 4px; right: 4px; background: #34c759; color: white; font-size: 0.58rem; padding: 1px 4px; border-radius: 8px; font-weight: 900; text-transform: uppercase; }
+        .match-call-btn { display: inline-flex; align-items: center; justify-content: center; background: #007aff; color: white; text-decoration: none; font-weight: 900; padding: 4px 6px; border-radius: 4px; font-size: 0.72rem; width: 100%; margin-top: 4px; text-transform: uppercase; text-align: center; }
     </style>
 </head>
 <body> 
@@ -227,24 +232,31 @@
     <div id="shift-scheduler-pop" class="driver-modal shift-modal-grid" style="display: block;">
         <span class="modal-title">Driver Profile Setup</span>
         
-        <label class="profile-field-label">1. What company do you drive for?</label>
-        <input type="text" id="driver-company-input" class="profile-input-field" placeholder="e.g. Yellow Cab Company Private Limited">
-        
-        <label class="profile-field-label">2. What is your car number?</label>
-        <input type="text" id="driver-car-input" class="profile-input-field" placeholder="e.g. 342">
-        
-        <label class="profile-field-label">3. What name do you want to go by?</label>
-        <input type="text" id="driver-name-input" class="profile-input-field" placeholder="e.g. Jaswell">
+        <div id="profile-setup-fields-wrapper">
+            <label class="profile-field-label">1. What company do you drive for?</label>
+            <input type="text" id="driver-company-input" class="profile-input-field" placeholder="e.g. Yellow Cab Company Private Limited">
+            
+            <label class="profile-field-label">2. What is your car number?</label>
+            <input type="text" id="driver-car-input" class="profile-input-field" placeholder="e.g. 342">
+            
+            <label class="profile-field-label">3. What name do you want to go by?</label>
+            <input type="text" id="driver-name-input" class="profile-input-field" placeholder="e.g. Jaswell">
 
-        <label class="profile-field-label">4. Your Vehicle Association Status?</label>
-        <select id="driver-role-select" class="profile-select-field">
-            <option value="Driver">I am a Driver (Looking for shifts/cars)</option>
-            <option value="Owner">I am the Car Owner (Looking for relief drivers)</option>
-        </select>
+            <label class="profile-field-label">4. Your Vehicle Association Status?</label>
+            <select id="driver-role-select" class="profile-select-field">
+                <option value="Driver">I am a Driver (Looking for shifts/cars)</option>
+                <option value="Owner">I am the Car Owner (Looking for relief drivers)</option>
+            </select>
 
-        <label class="profile-field-label">5. Contact Phone Number (Optional)</label>
-        <input type="tel" id="driver-phone-input" class="profile-input-field" placeholder="e.g. 604-555-0199 (Required for Driver Matching)">
+            <label class="profile-field-label">5. Contact Phone Number (Optional)</label>
+            <input type="tel" id="driver-phone-input" class="profile-input-field" placeholder="e.g. 604-555-0199 (Required for Driver Matching)">
+        </div>
         
+        <div id="profile-saved-identity-hud" style="display:none; background:#f2f2f7; padding:10px; border-radius:8px; border:2px dashed #8e8e93; margin-bottom:12px; font-size:0.88rem; font-weight:700; color:#1c1c1e; text-align:center;">
+            Active Identity Confirmed: <span id="hud-saved-name" style="color:#007aff;">---</span><br>
+            <span id="hud-saved-fleet" style="font-size:0.75rem; color:#636366;">---</span>
+        </div>
+
         <label class="profile-field-label" style="margin-top: 6px; color: #48484a; text-align: center;">What time does your shift end?</label>
         <input type="time" id="shift-end-time-input" class="shift-time-picker">
         
@@ -266,7 +278,7 @@
     </div>
 
     <div id="driver-matching-pop" class="driver-modal matching-grid">
-        <span class="modal-title">Driver & Car Exchange</span>
+        <span class="modal-title">📅 Driver & Car Exchange</span>
         <div class="match-card-info">
             Current Profile Identity Role: <span id="match-ui-current-role" style="color:#af52de;">---</span><br>
             Verified Contact Link: <span id="match-ui-current-phone">None Added</span>
@@ -274,19 +286,31 @@
         
         <div class="match-input-row">
             <label>Target Date:</label>
-            <input type="date" id="match-calendar-date" class="match-calendar-input">
+            <input type="date" id="match-calendar-date" class="match-calendar-input" onchange="renderMatchingBoardEntries()">
         </div>
         <div class="match-input-row">
             <label>Operation Shift:</label>
-            <select id="match-calendar-shift" class="match-select-shift">
+            <select id="match-calendar-shift" class="match-select-shift" onchange="renderMatchingBoardEntries()">
                 <option value="Day Shift">Day Shift (AM)</option>
                 <option value="Night Shift">Night Shift (PM)</option>
             </select>
         </div>
+        <div class="match-input-row">
+            <label>Target Fleet Company:</label>
+            <input type="text" id="match-company-target-input" class="profile-input-field" style="margin:0; width:55%; padding:6px; font-size:0.85rem;" placeholder="e.g. Yellow Cab">
+        </div>
         <button class="btn-log-availability" onclick="submitAvailabilityToMatchPool()">Publish Availability</button>
         
-        <div class="match-list-heading">Active Shared Board & Matches</div>
-        <div id="matching-board-target" class="matching-entries-scroller"></div>
+        <div class="dual-list-layout-wrapper">
+            <div class="match-column-container">
+                <div class="match-list-heading">👥 Relief Drivers</div>
+                <div id="matching-drivers-column-target" class="matching-entries-scroller"></div>
+            </div>
+            <div class="match-column-container">
+                <div class="match-list-heading">🚖 Fleet Vehicles</div>
+                <div id="matching-cars-column-target" class="matching-entries-scroller"></div>
+            </div>
+        </div>
         
         <button class="btn-close-cam" onclick="backToUtilityMenu('driver-matching-pop')">Back</button>
     </div>
@@ -435,10 +459,16 @@
             phoneNumber: ""       // Enhanced Storage Memory
         };
 
+        // TRACKS IF A BASE ANCHOR PROFILE RECORD ALREADY EXISTS
+        let isProfileDataAnchored = false;
+
         // NEW GLOBAL STORAGE CACHE SIMULATING DISPATCH MATCH POOL FEED
         let mockSharedMatchingPool = [
             { id: "M-1", name: "Paul S.", role: "Driver", company: "Yellow Cab Company Private Limited", carNumber: "N/A", date: "2026-06-01", shift: "Day Shift", phone: "604-555-9876" },
-            { id: "M-2", name: "M. Pabla", role: "Owner", company: "Yellow Cab Company Private Limited", carNumber: "154", date: "2026-06-02", shift: "Night Shift", phone: "778-555-1234" }
+            { id: "M-2", name: "M. Pabla", role: "Owner", company: "Yellow Cab Company Private Limited", carNumber: "154", date: "2026-06-02", shift: "Night Shift", phone: "778-555-1234" },
+            { id: "M-3", name: "David K.", role: "Driver", company: "Yellow Cab Company Private Limited", carNumber: "N/A", date: "2026-05-26", shift: "Day Shift", phone: "604-555-4321" },
+            { id: "M-4", name: "S. Dhillon", role: "Owner", company: "Yellow Cab Company Private Limited", carNumber: "210", date: "2026-05-26", shift: "Day Shift", phone: "778-555-8899" },
+            { id: "M-5", name: "John Doe", role: "Driver", company: "Black Top Cabs", carNumber: "N/A", date: "2026-05-26", shift: "Day Shift", phone: "604-555-0000" }
         ];
 
         // Map Core Initialization
@@ -509,12 +539,40 @@
             document.getElementById('driver-role-select').value = driverProfileMemory.role;
             document.getElementById('driver-phone-input').value = driverProfileMemory.phoneNumber;
             
+            // Prefill the Match Target Company input box with current profile company
+            document.getElementById('match-company-target-input').value = driverProfileMemory.company;
+            
             // Set Default value for the Match calendar tool to today
             document.getElementById('match-calendar-date').value = new Date().toISOString().split('T')[0];
+            
+            // Check if context structures exist to anchor the profile immediately
+            if (driverProfileMemory.company && driverProfileMemory.carNumber && driverProfileMemory.displayName) {
+                isProfileDataAnchored = true;
+                toggleProfileModalFieldsDisplay(true);
+            } else {
+                isProfileDataAnchored = false;
+                toggleProfileModalFieldsDisplay(false);
+            }
             
             document.getElementById('screen-overlay').style.display = 'block';
             document.getElementById('shift-scheduler-pop').style.display = 'block';
         });
+
+        // Helper function to hide profile input layers if identity data is already cached
+        function toggleProfileModalFieldsDisplay(isAnchored) {
+            const fieldsWrapper = document.getElementById('profile-setup-fields-wrapper');
+            const identityHud = document.getElementById('profile-saved-identity-hud');
+            
+            if (isAnchored) {
+                fieldsWrapper.style.display = 'none';
+                identityHud.style.display = 'block';
+                document.getElementById('hud-saved-name').innerText = `${driverProfileMemory.displayName} (${driverProfileMemory.role.toUpperCase()})`;
+                document.getElementById('hud-saved-fleet').innerText = `${driverProfileMemory.company} - Car #${driverProfileMemory.carNumber}`;
+            } else {
+                fieldsWrapper.style.display = 'block';
+                identityHud.style.display = 'none';
+            }
+        }
 
         // =========================================================================================
         // AUTO-HIDING ZOOM INTERACTION ENGINE
@@ -553,29 +611,38 @@
         // AUTOMATED SHIFT SCHEDULER CONTROLLER ENGINE
         // =========================================================================================
         function initializeDriverShiftTimer() {
-            const companyVal = document.getElementById('driver-company-input').value.trim();
-            const carVal = document.getElementById('driver-car-input').value.trim();
-            const nameVal = document.getElementById('driver-name-input').value.trim();
-            const roleVal = document.getElementById('driver-role-select').value;
-            const phoneVal = document.getElementById('driver-phone-input').value.trim();
-            const timeInputValue = document.getElementById('shift-end-time-input').value;
-            
-            if (!companyVal || !carVal || !nameVal) {
-                alert("ALL PROFILE INFORMATION FIELDS ARE MANDATORY TO SECURE DRIVER ANCHOR IDENTITY.");
-                return;
+            // Read fields only if they are visible/active
+            if (!isProfileDataAnchored) {
+                const companyVal = document.getElementById('driver-company-input').value.trim();
+                const carVal = document.getElementById('driver-car-input').value.trim();
+                const nameVal = document.getElementById('driver-name-input').value.trim();
+                const roleVal = document.getElementById('driver-role-select').value;
+                const phoneVal = document.getElementById('driver-phone-input').value.trim();
+                
+                if (!companyVal || !carVal || !nameVal) {
+                    alert("ALL PROFILE INFORMATION FIELDS ARE MANDATORY TO SECURE DRIVER ANCHOR IDENTITY.");
+                    return;
+                }
+
+                // Lock Profile Data Structures
+                driverProfileMemory.company = companyVal;
+                driverProfileMemory.carNumber = carVal;
+                driverProfileMemory.displayName = nameVal;
+                driverProfileMemory.role = roleVal;
+                driverProfileMemory.phoneNumber = phoneVal;
+                
+                // Update Matching panel prefill value dynamically
+                document.getElementById('match-company-target-input').value = companyVal;
+                
+                isProfileDataAnchored = true;
             }
+
+            const timeInputValue = document.getElementById('shift-end-time-input').value;
             if (!timeInputValue) {
                 alert("PLEASE SELECT A VALID SHIFT END TIME.");
                 return;
             }
 
-            // Lock Profile Data Structures
-            driverProfileMemory.company = companyVal;
-            driverProfileMemory.carNumber = carVal;
-            driverProfileMemory.displayName = nameVal;
-            driverProfileMemory.role = roleVal;
-            driverProfileMemory.phoneNumber = phoneVal;
-            
             // Assign Permanent Unique ID Tracking Number if missing
             if (!driverProfileMemory.uid) {
                 driverProfileMemory.uid = "DRV-" + Math.floor(100000 + Math.random() * 900000);
@@ -655,6 +722,9 @@
                 btn.innerHTML = "AUDIO<br>ON";
             }
             
+            // Force dynamic assessment of profile cache state on manual restart
+            toggleProfileModalFieldsDisplay(isProfileDataAnchored);
+            
             document.getElementById('screen-overlay').style.display = 'block';
             document.getElementById('shift-scheduler-pop').style.display = 'block';
         }
@@ -678,24 +748,31 @@
             if (!driverProfileMemory.phoneNumber) {
                 alert("PHONE NUMBER IS REQUIRED IN YOUR DRIVER PROFILE SYSTEM BEFORE LOGGING CALENDAR AVAILABILITY TO SECURE BILATERAL COMMUNICATIONS.");
                 hideModals();
+                toggleProfileModalFieldsDisplay(false); // Force opening fields to let them enter phone
+                isProfileDataAnchored = false; // Reset anchor flag to allow input corrections
                 showModal('shift-scheduler-pop');
                 return;
             }
 
             const chosenDate = document.getElementById('match-calendar-date').value;
             const chosenShift = document.getElementById('match-calendar-shift').value;
+            const chosenCompany = document.getElementById('match-company-target-input').value.trim();
 
             if (!chosenDate) {
                 alert("PLEASE HIGHLIGHT A VALID TARGET DATE ON THE CALENDAR SYSTEM.");
                 return;
             }
+            if (!chosenCompany) {
+                alert("PLEASE DECLARE A TARGET FLEET COMPANY FOR COOPERATIVE MATCH FILTERING.");
+                return;
+            }
 
-            // Construct new availability entry item
+            // Construct new availability entry item matching custom company parameters
             const newCalendarItem = {
                 id: "M-" + Math.floor(100000 + Math.random() * 900000),
                 name: driverProfileMemory.displayName,
                 role: driverProfileMemory.role,
-                company: driverProfileMemory.company,
+                company: chosenCompany,
                 carNumber: driverProfileMemory.role === "Owner" ? driverProfileMemory.carNumber : "N/A",
                 date: chosenDate,
                 shift: chosenShift,
@@ -706,46 +783,80 @@
             mockSharedMatchingPool.push(newCalendarItem);
             renderMatchingBoardEntries();
             
-            alert(`SUCCESS: Your ${chosenShift} availability profile for ${chosenDate} has been locked onto the shared marketplace boards!`);
+            alert(`SUCCESS: Your ${chosenShift} availability under "${chosenCompany}" for ${chosenDate} has been locked onto the shared marketplace boards!`);
         }
 
         function renderMatchingBoardEntries() {
-            const targetContainer = document.getElementById('matching-board-target');
-            targetContainer.innerHTML = "";
+            const driversContainer = document.getElementById('matching-drivers-column-target');
+            const carsContainer = document.getElementById('matching-cars-column-target');
+            
+            driversContainer.innerHTML = "";
+            carsContainer.innerHTML = "";
 
-            if (mockSharedMatchingPool.length === 0) {
-                targetContainer.innerHTML = `<div class="chat-empty-msg" style="padding-top:20px;">No Availability Listings Active</div>`;
-                return;
-            }
+            const targetDate = document.getElementById('match-calendar-date').value;
+            const targetShift = document.getElementById('match-calendar-shift').value;
+            
+            // Normalize company string to ensure safe matching
+            const myProfileCompanyNorm = driverProfileMemory.company.toLowerCase().trim();
+            const myRole = driverProfileMemory.role; // "Driver" or "Owner"
 
-            // Loop and analyze logic constraints to isolate cross-role perfect matches
+            let driverCount = 0;
+            let carCount = 0;
+
+            // Iterate and sort items into target dual-list arrays matching filtering requirements
             mockSharedMatchingPool.forEach(item => {
-                const row = document.createElement('div');
-                
-                // Identify cross matching configurations (Opposite role on identical calendar date + shift)
-                const isCrossRoleMatch = (item.role !== driverProfileMemory.role);
-                const isDateMatch = (item.date === document.getElementById('match-calendar-date').value);
-                const isShiftMatch = (item.shift === document.getElementById('match-calendar-shift').value);
-                const isPerfectMatch = isCrossRoleMatch && isDateMatch && isShiftMatch;
+                if (item.date !== targetDate || item.shift !== targetShift) return;
 
-                row.className = "match-item-row" + (isPerfectMatch ? " is-perfect-match" : "");
+                const itemCompanyNorm = item.company.toLowerCase().trim();
                 
-                let matchBadgeHtml = "";
-                if (isPerfectMatch) {
-                    matchBadgeHtml = `<span class="match-badge">Match Found</span>`;
+                // CORE BILATERAL COMPANY WHITE-LIST FILTER RULES:
+                // 1. If current user is a Driver: They should only see Owners/Cars belonging to their exact company.
+                // 2. If current user is an Owner: They should only see Drivers wanting to operate under their exact company.
+                // 3. Profiles matching your own exact role types are rendered generally without cross-filtering blocks.
+                let isPassedByBilateralFilter = true;
+                
+                if (myRole === "Driver" && item.role === "Owner") {
+                    if (!itemCompanyNorm.includes(myProfileCompanyNorm) && !myProfileCompanyNorm.includes(itemCompanyNorm)) {
+                        isPassedByBilateralFilter = false;
+                    }
+                } else if (myRole === "Owner" && item.role === "Driver") {
+                    if (!itemCompanyNorm.includes(myProfileCompanyNorm) && !myProfileCompanyNorm.includes(itemCompanyNorm)) {
+                        isPassedByBilateralFilter = false;
+                    }
                 }
 
-                let assetLabel = item.role === "Owner" ? `Vehicle: #${item.carNumber} (${item.company})` : `Looking for Vehicle Fleet Connection`;
+                if (!isPassedByBilateralFilter) return;
+
+                // Build Row
+                const row = document.createElement('div');
+                const isCrossRoleMatch = (item.role !== myRole);
+                row.className = "match-item-row" + (isCrossRoleMatch ? " is-perfect-match" : "");
+                
+                let matchBadgeHtml = isCrossRoleMatch ? `<span class="match-badge">Match</span>` : "";
+                let assetLabel = item.role === "Owner" ? `Car: #${item.carNumber}` : `Fleet: ${item.company}`;
 
                 row.innerHTML = `
                     ${matchBadgeHtml}
-                    <strong>${item.name} (${item.role.toUpperCase()})</strong>
-                    <span>Date: ${item.date} | Shift: ${item.shift}</span>
-                    <span style="font-size:0.78rem; color:#636366;">${assetLabel}</span>
-                    <a href="tel:${item.phone}" class="match-call-btn">📞 Call: ${item.phone}</a>
+                    <strong>${item.name}</strong>
+                    <span style="font-size:0.72rem; color:#444;">${assetLabel}</span>
+                    <a href="tel:${item.phone}" class="match-call-btn">📞 Call</a>
                 `;
-                targetContainer.appendChild(row);
+
+                if (item.role === "Driver") {
+                    driversContainer.appendChild(row);
+                    driverCount++;
+                } else if (item.role === "Owner") {
+                    carsContainer.appendChild(row);
+                    carCount++;
+                }
             });
+
+            if (driverCount === 0) {
+                driversContainer.innerHTML = `<div class="chat-empty-msg" style="padding-top:20px; font-size:0.75rem;">No Drivers</div>`;
+            }
+            if (carCount === 0) {
+                carsContainer.innerHTML = `<div class="chat-empty-msg" style="padding-top:20px; font-size:0.75rem;">No Cars</div>`;
+            }
         }
 
         // =========================================================================================
@@ -821,6 +932,7 @@
             showModal('suggestion-pop');
         }
 
+        // STRICTLY FIXES ROUTING FLOW BACK TO THE UTILITY MENU
         function backToUtilityMenu(currentModalId) {
             document.getElementById(currentModalId).style.display = 'none';
             showModal('utility-menu-pop');
