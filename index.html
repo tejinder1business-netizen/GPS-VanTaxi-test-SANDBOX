@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+            <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -241,7 +241,7 @@
 
     <div id="screen-overlay" class="modal-overlay" onclick="hideModals()"></div> 
 
-    <div id="shift-scheduler-pop" class="driver-modal shift-modal-grid" style="display: block;">
+    <div id="shift-scheduler-pop" class="driver-modal shift-modal-grid">
         <span class="modal-title" id="profile-modal-main-title">Driver Profile Setup</span>
         
         <div id="profile-setup-fields-wrapper">
@@ -267,7 +267,7 @@
             </select>
 
             <label class="profile-field-label">5. Contact Phone Number (Optional)</label>
-            <input type="tel" id="driver-phone-input" class="profile-input-field" placeholder="e.g. 604-555-0199 (Required for Driver Matching)">
+            <input type="tel" id="driver-phone-input" class="profile-input-field" placeholder="e.g. 604-555-0199">
         </div>
         
         <div id="profile-saved-identity-hud" style="display:none; background:#f2f2f7; padding:10px; border-radius:8px; border:2px dashed #8e8e93; margin-bottom:12px; font-size:0.88rem; font-weight:700; color:#1c1c1e; text-align:center;">
@@ -489,8 +489,8 @@
             carNumber: "342",
             displayName: "Jaswell",
             isSuspended: false,
-            role: "Driver",       // Enhanced Storage Memory
-            phoneNumber: ""       // Enhanced Storage Memory
+            role: "Driver",
+            phoneNumber: ""
         };
 
         // TRACKS IF A BASE ANCHOR PROFILE RECORD ALREADY EXISTS
@@ -543,7 +543,6 @@
                 if (currentCompany.includes("yellow cab") || currentCompany.includes("yc")) {
                     markerLabel = `YC ${currentCarNumber}`;
                 } else if (currentCompany) {
-                    // Extract first character of words up to 3 chars maximum
                     const shortName = currentCompany.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 3);
                     markerLabel = `${shortName} ${currentCarNumber}`;
                 } else {
@@ -564,7 +563,6 @@
             const profileSelect = document.getElementById('driver-company-select');
             const matchSelect = document.getElementById('match-company-target-select');
             
-            // Rebuild main settings menu selector items
             let profileOptionsHtml = "";
             activeCompanyRegistry.forEach(comp => {
                 profileOptionsHtml += `<option value="${comp}">${comp}</option>`;
@@ -572,7 +570,6 @@
             profileOptionsHtml += `<option value="__ADD_NEW_COMPANY__">[ + Add Custom Fleet Company ]</option>`;
             profileSelect.innerHTML = profileOptionsHtml;
             
-            // Rebuild driver match filter selector items
             let matchOptionsHtml = "";
             activeCompanyRegistry.forEach(comp => {
                 matchOptionsHtml += `<option value="${comp}">${comp}</option>`;
@@ -580,55 +577,57 @@
             matchSelect.innerHTML = matchOptionsHtml;
         }
 
-        // HANDLES AD-HOC INTERACTIVE REGISTRATION PROCEDURES FOR NEW TAXI ENTITIES
         function handleCompanySelectionFramework(selectElement) {
             if (selectElement.value === "__ADD_NEW_COMPANY__") {
                 const customFirmName = prompt("ENTER FORMAL REGISTERED NAME FOR YOUR NEW TAXI COMPANY:");
-                
                 if (customFirmName && customFirmName.trim() !== "") {
                     const cleanedName = customFirmName.trim();
-                    
-                    // Add to system registry array cache if it is unique
                     if (!activeCompanyRegistry.includes(cleanedName)) {
                         activeCompanyRegistry.push(cleanedName);
                     }
-                    
-                    // Update and refresh options across all views
                     syncCompanyDropdownUIFields();
-                    
-                    // Force selected value to match the newly added firm asset entry
                     selectElement.value = cleanedName;
                 } else {
-                    // Fall back to first option item if registration cancels out
                     selectElement.value = activeCompanyRegistry[0];
                 }
             }
         }
 
-        // Set default time values for input on page load
+        // --- NEW: AUTO START FUNCTION FOR DIRECT MAP ACCESS ---
+        function autoStartDefaultShift() {
+            const now = new Date();
+            now.setHours(now.getHours() + 12); // Default 12 hour hidden shift
+            targetShiftEndTimestamp = now.getTime();
+            isShiftActive = true;
+            driverProfileMemory.isSuspended = false;
+
+            if (!driverProfileMemory.uid) {
+                driverProfileMemory.uid = "DRV-" + Math.floor(100000 + Math.random() * 900000);
+            }
+
+            if (shiftMonitoringInterval) clearInterval(shiftMonitoringInterval);
+            shiftMonitoringInterval = setInterval(checkShiftTimeExpirationStatus, 1000);
+
+            updateHudProfileTriggerButtonLabel();
+            initializeWebSocketConnection(); // Start the live websocket sync immediately
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             const now = new Date();
             now.setHours(now.getHours() + 8);
             const defaultTimeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
             document.getElementById('shift-end-time-input').value = defaultTimeStr;
             
-            // Initialize dropdown elements array data schemas
             syncCompanyDropdownUIFields();
             
-            // Prefill with traditional structured user preferences 
             document.getElementById('driver-company-select').value = driverProfileMemory.company;
             document.getElementById('driver-car-input').value = driverProfileMemory.carNumber;
             document.getElementById('driver-name-input').value = driverProfileMemory.displayName;
             document.getElementById('driver-role-select').value = driverProfileMemory.role;
             document.getElementById('driver-phone-input').value = driverProfileMemory.phoneNumber;
-            
-            // Prefill the Match Target Company select menu with current profile company value
             document.getElementById('match-company-target-select').value = driverProfileMemory.company;
-            
-            // Set Default value for the Match calendar tool to today
             document.getElementById('match-calendar-date').value = new Date().toISOString().split('T')[0];
             
-            // Check if context structures exist to anchor the profile immediately
             if (driverProfileMemory.company && driverProfileMemory.carNumber && driverProfileMemory.displayName) {
                 isProfileDataAnchored = true;
                 toggleProfileModalFieldsDisplay(true);
@@ -639,11 +638,14 @@
             
             updateHudProfileTriggerButtonLabel();
             
-            document.getElementById('screen-overlay').style.display = 'block';
-            document.getElementById('shift-scheduler-pop').style.display = 'block';
+            // --- CHANGED: Hide the overlay and modal by default ---
+            document.getElementById('screen-overlay').style.display = 'none';
+            document.getElementById('shift-scheduler-pop').style.display = 'none';
+
+            // --- CHANGED: Automatically start the shift so the map/buttons work immediately ---
+            autoStartDefaultShift();
         });
 
-        // Helper function to update the map side button label
         function updateHudProfileTriggerButtonLabel() {
             const btn = document.getElementById('profile-hud-trigger-btn');
             if (btn) {
@@ -655,7 +657,6 @@
             }
         }
 
-        // Helper function to hide profile input layers if identity data is already cached
         function toggleProfileModalFieldsDisplay(isAnchored) {
             const fieldsWrapper = document.getElementById('profile-setup-fields-wrapper');
             const identityHud = document.getElementById('profile-saved-identity-hud');
@@ -671,37 +672,27 @@
             }
         }
 
-        // Trigger function to handle clicking the Profile Button on the side of the map screen
         function openFullProfileSettings() {
             if (driverProfileMemory.isSuspended) return;
             
-            // Set dynamic header titles and show full input areas
             document.getElementById('profile-modal-main-title').innerText = "Edit Profile Settings";
-            
-            // Refresh drop choices arrays 
             syncCompanyDropdownUIFields();
             
-            // Pre-populate input values with existing active cache data values
             document.getElementById('driver-company-select').value = driverProfileMemory.company;
             document.getElementById('driver-car-input').value = driverProfileMemory.carNumber;
             document.getElementById('driver-name-input').value = driverProfileMemory.displayName;
             document.getElementById('driver-role-select').value = driverProfileMemory.role;
             document.getElementById('driver-phone-input').value = driverProfileMemory.phoneNumber;
             
-            // Show the inputs directly for editing access
             document.getElementById('profile-setup-fields-wrapper').style.display = 'block';
             document.getElementById('profile-saved-identity-hud').style.display = 'none';
-            
-            // Hide shift timer field so they focus purely on updating personal records
             document.getElementById('shift-end-time-picker-section').style.display = 'none';
             
-            // Transform button modes to save corrections cleanly
             const submitBtn = document.getElementById('profile-submit-action-btn');
             submitBtn.innerText = "Save Adjustments";
             submitBtn.setAttribute('onclick', 'saveProfileAdjustmentsDirectly()');
             
             document.getElementById('profile-close-action-btn').style.display = 'block';
-            
             showModal('shift-scheduler-pop');
         }
 
@@ -710,7 +701,6 @@
             document.getElementById('profile-saved-identity-hud').style.display = 'none';
         }
 
-        // Save modifications from a mid-shift profile adjustment action
         function saveProfileAdjustmentsDirectly() {
             const companyVal = document.getElementById('driver-company-select').value.trim();
             const carVal = document.getElementById('driver-car-input').value.trim();
@@ -723,20 +713,15 @@
                 return;
             }
 
-            // Write properties directly to memory storage cache
             driverProfileMemory.company = companyVal;
             driverProfileMemory.carNumber = carVal;
             driverProfileMemory.displayName = nameVal;
             driverProfileMemory.role = roleVal;
             driverProfileMemory.phoneNumber = phoneVal;
-            
-            // Keep matching dashboard sync targets accurate
             document.getElementById('match-company-target-select').value = companyVal;
-            
             isProfileDataAnchored = true;
             updateHudProfileTriggerButtonLabel();
 
-            // Refresh marker visuals dynamically
             if (vehicleMarker && vehiclePos) {
                 map.removeLayer(vehicleMarker);
                 vehicleMarker = L.marker(vehiclePos, { icon: generateDynamicTaxiIcon() }).addTo(map);
@@ -746,9 +731,6 @@
             alert("SUCCESS: Your profile registry identity configurations have been live adjusted!");
         }
 
-        // =========================================================================================
-        // AUTO-HIDING ZOOM INTERACTION ENGINE
-        // =========================================================================================
         function showZoomControlsTemporarily() {
             if (!isShiftActive || driverProfileMemory.isSuspended) return;
             const zoomBox = document.getElementById('dynamic-zoom-box');
@@ -779,11 +761,7 @@
             preferredZoomDepth = map.getZoom();
         });
 
-        // =========================================================================================
-        // AUTOMATED SHIFT SCHEDULER CONTROLLER ENGINE WITH WEBSOCKET INITIALIZER
-        // =========================================================================================
         function initializeDriverShiftTimer() {
-            // Read fields only if they are visible/active
             if (!isProfileDataAnchored) {
                 const companyVal = document.getElementById('driver-company-select').value.trim();
                 const carVal = document.getElementById('driver-car-input').value.trim();
@@ -796,16 +774,12 @@
                     return;
                 }
 
-                // Lock Profile Data Structures
                 driverProfileMemory.company = companyVal;
                 driverProfileMemory.carNumber = carVal;
                 driverProfileMemory.displayName = nameVal;
                 driverProfileMemory.role = roleVal;
                 driverProfileMemory.phoneNumber = phoneVal;
-                
-                // Update Matching panel prefill value dynamically
                 document.getElementById('match-company-target-select').value = companyVal;
-                
                 isProfileDataAnchored = true;
             }
 
@@ -815,7 +789,6 @@
                 return;
             }
 
-            // Assign Permanent Unique ID Tracking Number if missing
             if (!driverProfileMemory.uid) {
                 driverProfileMemory.uid = "DRV-" + Math.floor(100000 + Math.random() * 900000);
             }
@@ -837,13 +810,11 @@
 
             updateHudProfileTriggerButtonLabel();
 
-            // Re-render vehicle marker with dynamic contextual layout configuration updates
             if (vehicleMarker && vehiclePos) {
                 map.removeLayer(vehicleMarker);
                 vehicleMarker = L.marker(vehiclePos, { icon: generateDynamicTaxiIcon() }).addTo(map);
             }
 
-            // TRIGGER REAL-TIME INTER-DEVICE NETWORK SYNC PIPELINE
             initializeWebSocketConnection();
 
             document.getElementById('shift-scheduler-pop').style.display = 'none';
@@ -870,11 +841,8 @@
                 btn.innerHTML = "AUDIO<br>MUTED";
             }
 
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
-            }
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
 
-            // Gracefully disconnect socket channels
             if (globalSocketInstance) {
                 globalSocketInstance.close();
                 globalSocketInstance = null;
@@ -884,7 +852,6 @@
             trackVehicleView = false;
             document.getElementById('dynamic-zoom-box').classList.remove('zoom-visible');
 
-            // Reset Default Operational Content Text Layouts
             document.getElementById('status-screen-emoji').innerText = "🏁";
             document.getElementById('status-screen-heading').innerText = "Shift Completed";
             document.getElementById('status-screen-body').innerText = "You have been signed off. The application is shut down and all audio updates are disabled. Have a safe drive home!";
@@ -905,7 +872,6 @@
                 btn.innerHTML = "AUDIO<br>ON";
             }
             
-            // Re-enable scheduling view configurations setup parameters
             document.getElementById('profile-modal-main-title').innerText = "Driver Profile Setup";
             document.getElementById('shift-end-time-picker-section').style.display = 'block';
             
@@ -914,8 +880,6 @@
             submitBtn.setAttribute('onclick', 'initializeDriverShiftTimer()');
             
             document.getElementById('profile-close-action-btn').style.display = 'none';
-            
-            // Force dynamic assessment of profile cache state on manual restart
             toggleProfileModalFieldsDisplay(isProfileDataAnchored);
             
             document.getElementById('screen-overlay').style.display = 'block';
@@ -923,12 +887,12 @@
         }
 
         // =========================================================================================
-        // REAL-TIME WEBSOCKET DATA SYNC ENGINE (SANDBOX COMPATIBLE BROKER)
+        // REAL-TIME WEBSOCKET DATA SYNC ENGINE (DATA-MINIFIED)
         // =========================================================================================
         function initializeWebSocketConnection() {
             if (globalSocketInstance && globalSocketInstance.readyState === WebSocket.OPEN) return;
 
-            // Connects to a highly responsive, public Sandbox channels cluster broker
+            // Note: This is a public PieSocket sandbox channel. It may occasionally reset if overloaded.
             const sharedChannelUri = "wss://free.piesocket.com/v3/vancouver_cab_companion_pro?api_key=VCcp7V10_SandboxBrokerKey_NoAuthRequired";
             
             try {
@@ -936,12 +900,22 @@
 
                 globalSocketInstance.onmessage = function(event) {
                     try {
-                        const incomingPackage = JSON.parse(event.data);
+                        // The payload is minified heavily to keep your data usage incredibly small
+                        const minPayload = JSON.parse(event.data);
                         
-                        // Ignore data reflections emitted by our own driver token identifier
-                        if (incomingPackage.senderUid === driverProfileMemory.uid) return;
+                        if (minPayload.u === driverProfileMemory.uid) return;
                         
-                        // Execute mapping projection procedures based on category routing instructions
+                        // Expand the minified payload back out into usable data
+                        const incomingPackage = {
+                            senderUid: minPayload.u,
+                            category: minPayload.c,
+                            subType: minPayload.s,
+                            coordinates: [minPayload.x, minPayload.y],
+                            address: minPayload.a,
+                            textString: minPayload.t,
+                            dir: minPayload.d
+                        };
+                        
                         handleRemoteMarkerInjection(incomingPackage);
                     } catch (err) {
                         console.log("Network buffer ingestion error: " + err.message);
@@ -953,7 +927,6 @@
                 };
 
                 globalSocketInstance.onclose = function() {
-                    // Automatically retry connectivity cycles if shift parameters remain active
                     if (isShiftActive && !driverProfileMemory.isSuspended) {
                         setTimeout(initializeWebSocketConnection, 5000);
                     }
@@ -966,10 +939,19 @@
         function broadcastPayloadToPeerDevices(payloadObject) {
             if (!globalSocketInstance || globalSocketInstance.readyState !== WebSocket.OPEN) return;
             
-            // Append personal unique identifier signature to prevent loop echo reflections
-            payloadObject.senderUid = driverProfileMemory.uid;
+            // --- NEW: MINIFIED PAYLOAD TO KEEP DATA LOAD AT ABSOLUTE LOWEST POINT ---
+            const minifiedPayload = {
+                u: driverProfileMemory.uid,           // User ID
+                c: payloadObject.category,            // Category
+                s: payloadObject.subType,             // SubType
+                x: payloadObject.coordinates[0],      // Lat
+                y: payloadObject.coordinates[1],      // Lng
+                a: payloadObject.address,             // Address
+                t: payloadObject.textString,          // Text String
+                d: payloadObject.dir || ""            // Direction
+            };
             
-            globalSocketInstance.send(JSON.stringify(payloadObject));
+            globalSocketInstance.send(JSON.stringify(minifiedPayload));
         }
 
         function handleRemoteMarkerInjection(data) {
@@ -1008,7 +990,6 @@
                     <a href="${navigationUrl}" target="_blank" style="display:block; text-align:center; background:#007aff; color:white; font-weight:bold; padding:8px 10px; border-radius:6px; text-decoration:none; margin-top:5px; text-transform:uppercase; font-size:11px;">Navigate to Flag</a>
                 `);
 
-                // Execute Text-to-Speech audio notification routines locally on Device B
                 dispatchRemoteAudioNarration(data.category, data.subType, data.address);
 
                 setTimeout(() => { map.removeLayer(flagMarker); }, 300000);
@@ -1116,17 +1097,11 @@
             }, 1500);
         }
 
-        // =========================================================================================
-        // DRIVER VEHICLE MATCHING CALENDAR ENGINE PIPELINE
-        // =========================================================================================
         function openDriverMatchingPortal() {
             hideModals();
-            
-            // Sync current profile variables with UI fields
             document.getElementById('match-ui-current-role').innerText = driverProfileMemory.role.toUpperCase();
             document.getElementById('match-ui-current-phone').innerText = driverProfileMemory.phoneNumber || "None Added (Update Profile Setup)";
             
-            // Regenerate menu select parameters list 
             syncCompanyDropdownUIFields();
             document.getElementById('match-company-target-select').value = driverProfileMemory.company;
             
@@ -1135,7 +1110,6 @@
         }
 
         function submitAvailabilityToMatchPool() {
-            // Mandate phone contact verification before accepting board entries
             if (!driverProfileMemory.phoneNumber) {
                 alert("PHONE NUMBER IS REQUIRED IN YOUR DRIVER PROFILE SYSTEM BEFORE LOGGING CALENDAR AVAILABILITY TO SECURE BILATERAL COMMUNICATIONS.");
                 hideModals();
@@ -1156,7 +1130,6 @@
                 return;
             }
 
-            // Construct new availability entry item matching custom company parameters
             const newCalendarItem = {
                 id: "M-" + Math.floor(100000 + Math.random() * 900000),
                 name: driverProfileMemory.displayName,
@@ -1168,7 +1141,6 @@
                 phone: driverProfileMemory.phoneNumber
             };
 
-            // Inject record entry directly into operational cache data models
             mockSharedMatchingPool.push(newCalendarItem);
             renderMatchingBoardEntries();
             
@@ -1185,25 +1157,20 @@
             const targetDate = document.getElementById('match-calendar-date').value;
             const targetShift = document.getElementById('match-calendar-shift').value;
             
-            // Normalize selected filter menu item value cleanly
             const chosenCompanyVal = document.getElementById('match-company-target-select').value;
             const targetCompanyNorm = chosenCompanyVal ? chosenCompanyVal.toLowerCase().trim() : "";
-            const myRole = driverProfileMemory.role; // "Driver" or "Owner"
+            const myRole = driverProfileMemory.role;
 
             let driverCount = 0;
             let carCount = 0;
 
-            // Iterate and sort items into target dual-list arrays matching filtering requirements
             mockSharedMatchingPool.forEach(item => {
                 if (item.date !== targetDate || item.shift !== targetShift) return;
 
                 const itemCompanyNorm = item.company.toLowerCase().trim();
                 
-                // BILATERAL DROPDOWN EXCHANGE FILTER RULE ENGINE:
-                // Match items against target filter option selection currently specified by user.
                 if (itemCompanyNorm !== targetCompanyNorm) return;
 
-                // Build Row
                 const row = document.createElement('div');
                 const isCrossRoleMatch = (item.role !== myRole);
                 row.className = "match-item-row" + (isCrossRoleMatch ? " is-perfect-match" : "");
@@ -1235,9 +1202,6 @@
             }
         }
 
-        // =========================================================================================
-        // ADMIN PORTAL PIPELINE AND ENFORCEMENT PROTOCOLS
-        // =========================================================================================
         function accessAdminControlPortal() {
             hideModals();
             const challengeCode = prompt("ENTER CONFIDENTIAL ADMINISTRATIVE DISPATCH PASSCODE:");
@@ -1276,7 +1240,6 @@
             trackVehicleView = false;
             document.getElementById('dynamic-zoom-box').classList.remove('zoom-visible');
 
-            // Hard lock the screen status layout block to prevent dashboard recovery escape
             document.getElementById('status-screen-emoji').innerText = "⚠️";
             document.getElementById('status-screen-heading').innerText = "Profile Suspended";
             document.getElementById('status-screen-body').innerText = `Attention: Account status has been locked down by admin management. Your profile (${driverProfileMemory.uid}) is placed inside an active time out penalty. Communication modules disabled.`;
@@ -1285,9 +1248,6 @@
             document.getElementById('shift-complete-screen').style.display = 'flex';
         }
 
-        // =========================================================================================
-        // MENU OVERLAY ROUTING SELECTIONS
-        // =========================================================================================
         function openCautionSelectionFromMenu() {
             hideModals();
             showModal('caution-type-pop');
@@ -1313,7 +1273,6 @@
             showModal('suggestion-pop');
         }
 
-        // STRICTLY FIXES ROUTING FLOW BACK TO THE UTILITY MENU
         function backToUtilityMenu(currentModalId) {
             document.getElementById(currentModalId).style.display = 'none';
             showModal('utility-menu-pop');
@@ -1327,7 +1286,6 @@
             window.open(targetUrl, '_blank');
         } 
 
-        // Geolocation Engine Hooks
         map.locate({ watch: true, enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }); 
 
         map.on('locationfound', function(e) {
@@ -1359,9 +1317,6 @@
             btn.innerHTML = "MAP<br>FREE";
         }); 
 
-        // =========================================================================================
-        // REVERSE GEOLOCATION ENGINE
-        // =========================================================================================
         function fetchAddressFromCoordinates(latlng, forcedCallback = null) {
             let distanceMoved = 0;
             if (lastGeocodedPos) {
@@ -1434,9 +1389,6 @@
             }
         } 
 
-        // =========================================================================================
-        // DISPATCH PASSENGER FLAG MARKER
-        // =========================================================================================
         function dropFlagDirect(selectionValue) {
             if (!isShiftActive) return;
             hideModals(); 
@@ -1479,7 +1431,6 @@
                     <a href="${navigationUrl}" target="_blank" style="display:block; text-align:center; background:#007aff; color:white; font-weight:bold; padding:8px 10px; border-radius:6px; text-decoration:none; margin-top:5px; text-transform:uppercase; font-size:11px;">Navigate to Flag</a>
                 `).openPopup(); 
 
-                // BROADCAST FLAG LOCATION IMMEDIATELY TO DEVICE B
                 broadcastPayloadToPeerDevices({
                     category: 'Flag',
                     subType: selectionValue,
@@ -1496,9 +1447,6 @@
             });
         } 
 
-        // =========================================================================================
-        // CAUTION CONDITIONS
-        // =========================================================================================
         function selectCautionType(type) {
             if (!isShiftActive) return;
             chosenCautionType = type;
@@ -1556,7 +1504,6 @@
                     <span>Location: ${completeAddress}</span>
                 `).openPopup(); 
 
-                // BROADCAST HAZARD CONDITIONS TO DEVICE B
                 broadcastPayloadToPeerDevices({
                     category: 'Caution',
                     subType: typeLabel,
@@ -1574,9 +1521,6 @@
             });
         } 
 
-        // =========================================================================================
-        // POLICE DETECTION MARKERS
-        // =========================================================================================
         function selectPoliceType(type) {
             if (!isShiftActive) return;
             chosenPoliceType = type.toLowerCase().trim();
@@ -1616,7 +1560,6 @@
                     <span>Location: ${completeAddress}</span>
                 `).openPopup(); 
 
-                // BROADCAST POLICE THREAT ZONES TO DEVICE B
                 broadcastPayloadToPeerDevices({
                     category: 'Police',
                     subType: typeLabel,
@@ -1656,9 +1599,6 @@
             return numberStr;
         } 
 
-        // =========================================================================================
-        // TEXT-TO-SPEECH ANNOUNCEMENTS AUDIO ENGINE
-        // =========================================================================================
         function dispatchAudioNarration(category, payload) {
             if (!isShiftActive || audioMuted || driverProfileMemory.isSuspended) return; 
 
@@ -1741,9 +1681,6 @@
             alert("Thank you! Your suggestion has been recorded.");
         }
 
-        // =========================================================================================
-        // CHAT LOG HISTORY PANEL ARCHITECTURE
-        // =========================================================================================
         function openChatLogHistoryMenu() {
             if (!isShiftActive) return;
             showModal('chat-log-pop');
@@ -1853,7 +1790,6 @@
             });
         }
 
-        // Screen Wake Lock Handler
         async function maintainScreenWakeLock() {
             try {
                 if ('wakeLock' in navigator) {
