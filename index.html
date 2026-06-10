@@ -2237,33 +2237,37 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
 
-       map.on('locationfound', function(e) {
+        map.locate({ watch: true, enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }); 
+
+
+
+        map.on('locationfound', function(e) {
+
             if (driverProfileMemory.isSuspended) return;
 
-            // --- NEW FEATURE: GEOFENCE CHECK ---
-            // Define Vancouver center
-            const vancouverCoords = L.latLng(49.2611, -123.1281);
-            // Find the Camera button in the menu
-            const cameraBtn = document.querySelector('.btn-cameras-menu');
-            
-            // Check distance to Vancouver (100km = 100,000 meters)
-            if (cameraBtn) {
-                if (e.latlng.distanceTo(vancouverCoords) <= 100000) {
-                    cameraBtn.style.display = 'block'; // Show if inside 100km
-                } else {
-                    cameraBtn.style.display = 'none';  // Hide if outside 100km
-                }
-            }
-            // --- END OF NEW FEATURE ---
-
             vehiclePos = e.latlng;
+
             if (!vehicleMarker) {
+
                 vehicleMarker = L.marker(e.latlng, { icon: generateDynamicTaxiIcon() }).addTo(map);
+
                 map.setView(e.latlng, preferredZoomDepth);
+
             } else { vehicleMarker.setLatLng(e.latlng); } 
+
             if (trackVehicleView) { map.setView(e.latlng, preferredZoomDepth); } 
+
             fetchAddressFromCoordinates(e.latlng);
-        });
+
+        }); 
+
+
+
+        setInterval(() => { if (trackVehicleView && vehiclePos && !driverProfileMemory.isSuspended) { map.setView(vehiclePos, preferredZoomDepth); } }, 2000);
+
+        map.on('dragstart', function() { if (!isShiftActive) return; trackVehicleView = false; const btn = document.getElementById('lock-center-btn'); btn.className = "util-circle"; btn.innerHTML = "MAP<br>FREE"; }); 
+
+
 
         //==================================================================
 
@@ -2278,10 +2282,10 @@ window.addEventListener('DOMContentLoaded', () => {
         function fetchAddressFromCoordinates(latlng, forcedCallback = null) {
 
             let distanceMoved = 0;
-            if (lastGeocodedPos && distanceMoved < 15 && currentAddressData.isLoade
 
             if (lastGeocodedPos) { distanceMoved = latlng.distanceTo(lastGeocodedPos); } 
-d && !forcedCallback) { if (forcedCallback) forcedCallback(); return; } 
+
+            if (lastGeocodedPos && distanceMoved < 15 && currentAddressData.isLoaded && !forcedCallback) { if (forcedCallback) forcedCallback(); return; } 
 
             const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&zoom=18&addressdetails=1&_cb=${Date.now()}`; 
 
